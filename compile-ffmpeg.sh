@@ -1302,6 +1302,32 @@ buildLibs() {
             echo -------------------------------------------------
         fi
     fi
+
+    cd "$LOCALBUILDDIR" || exit
+
+    if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-vapoursynth" ]]; then
+        if [ -f "$LOCALDESTDIR/lib/libvapoursynth.a" ]; then
+            echo -------------------------------------------------
+            echo "vapoursynth is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile vapoursynth\007"
+
+            do_git "https://github.com/vapoursynth/vapoursynth.git" libvapoursynth-git
+
+            if [[ ! -f "configure" ]]; then
+                ./autogen.sh
+            fi
+            
+            ./configure --prefix="$LOCALDESTDIR" --libdir="$LOCALDESTDIR/lib" --enable-static
+
+            make -j "$cpuCount"
+            make install
+
+            do_checkIfExist libvapoursynth-git libvapoursynth.a
+        fi
+    fi
+
 }
 
 buildFfmpeg() {
@@ -1310,7 +1336,7 @@ buildFfmpeg() {
     echo "compile ffmpeg"
     echo "-------------------------------------------------------------------------------"
 
-    do_git "https://github.com/FFmpeg/FFmpeg.git" ffmpeg-git "" $ffmpeg_branch
+    do_git "https://git.ffmpeg.org/ffmpeg.git" "ffmpeg-n7.0" "" "n7.0"
 
     if [[ $compile == "true" ]] || [[ $buildFFmpeg == "true" ]] || [[ ! -f "$LOCALDESTDIR/bin/ffmpeg" ]] && [[ ! -f "$LOCALDESTDIR/bin/ffmpeg_shared/bin/ffmpeg" ]]; then
         if [[ "$ffmpeg_shared" == "yes" ]]; then
@@ -1368,8 +1394,8 @@ buildFfmpeg() {
         fi
 
         if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-nvenc" ]]; then
-            export PATH="/usr/local/cuda-12.0/bin:$PATH"
-            export LD_LIBRARY_PATH="/usr/local/cuda-12.0/lib64:$LD_LIBRARY_PATH"
+            export PATH="/usr/local/cuda-12.6/bin:$PATH"
+            export LD_LIBRARY_PATH="/usr/local/cuda-12.6/lib64:$LD_LIBRARY_PATH"
             EXTRA_CFLAGS="$EXTRA_CFLAGS -I/usr/local/cuda/include"
             EXTRA_LD="$EXTRA_LD -L/usr/local/cuda/lib64"
         fi
