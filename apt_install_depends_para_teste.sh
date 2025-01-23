@@ -4,4 +4,4 @@ sudo apt-get update && sudo apt-get install -y \
   libdrm-dev libiec61883-dev libjack-jackd2-dev libmodplug-dev libgsm1-dev libbs2b-dev libpulse-dev \
   libsnappy-dev libssh-dev libtheora-dev libv4l-dev libvidstab-dev libvorbis-dev libvpl-dev \
   libwebp-dev libxvidcore-dev ocl-icd-opencl-dev libgl1-mesa-dev libvulkan-dev libjxl-dev \
-  libshaderc-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev
+  libshaderc-dev libxcb1-dev libxcb-shm0-dev libxcb-xfixes0-dev libavc1394-dev libopencore-amrnb-dev libopencore-amrwb-dev libdevil-dev libsoundtouch-dev libplacebo-dev libunwind-dev libshaderc-dev

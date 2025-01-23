@@ -8,4 +8,4 @@ sudo apt update && sudo apt install -y \
   libjxl-dev libvpl-dev libsvtav1-dev libxml2-dev libssh-dev libzstd-dev zlib1g-dev libtwolame-dev \
   librist-dev vulkan-tools openssl ladspa-sdk libgsm1-dev \
   librav1e-dev libplacebo-dev cython3 autoconf automake libtool texi2html cmake curl git wget gperf \
-  ninja-build cargo nasm meson rsync xxd cargo-c
+  ninja-build cargo nasm meson rsync xxd cargo-c libavc1394-dev libopencore-amrnb-dev libopencore-amrwb-dev libdevil-dev libsoundtouch-dev libplacebo-dev libunwind-dev libshaderc-dev

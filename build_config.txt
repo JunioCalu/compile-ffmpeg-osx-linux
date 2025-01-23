@@ -1,6 +1,6 @@
---nvccflags="-gencode arch=compute_50,code=sm_50 -O2"
+--nvccflags=-gencode arch=compute_50,code=sm_50 -O2
 --disable-debug
---enable-amf
+#--enable-amf
 --enable-avisynth
 --enable-nonfree
 --enable-cuda-llvm
@@ -8,7 +8,7 @@
 --enable-decklink
 --enable-libklvanc
 --enable-librist
---enable-libshaderc
+#--enable-libshaderc
 --disable-ffplay
 --disable-sdl2
 --enable-libtwolame
@@ -23,7 +23,7 @@
 --enable-ladspa
 --enable-libaom
 --enable-libass
---enable-libbluray
+#--enable-libbluray
 --enable-libbs2b
 --enable-libdav1d
 --enable-libdrm
@@ -41,7 +41,7 @@
 --enable-libopencore-amrwb
 --enable-libopenjpeg
 --enable-libopus
---enable-libplacebo
+#--enable-libplacebo
 --enable-libpulse
 --enable-librav1e
 --enable-librsvg
@@ -51,7 +51,7 @@
 --enable-libspeex
 --enable-libsrt
 --enable-libssh
---enable-libsvtav1
+#--enable-libsvtav1
 --enable-libtheora
 --enable-libv4l2
 --enable-libvidstab
@@ -66,6 +66,7 @@
 --enable-libxml2
 --enable-libxvid
 --enable-libzimg
+--enable-cuda
 --enable-nvdec
 --enable-nvenc
 --enable-cuvid

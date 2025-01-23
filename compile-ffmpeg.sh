@@ -46,7 +46,7 @@ fi
 
 if [[ "$optimize" == "y" ]] || [[ "$arch" != "x86_64" ]]; then
     tune="native"
-    onum=3
+    onum=2
     cpuDetect=""
     vpxFlags=""
 else
@@ -1328,6 +1328,41 @@ buildLibs() {
         fi
     fi
 
+    cd "$LOCALBUILDDIR" || exit
+
+    if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-avisynth" ]]; then
+        if [ -f "$LOCALDESTDIR/lib/libavisynth.a" ]; then
+            echo -------------------------------------------------
+            echo "AviSynthPlus is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile AviSynthPlus\007"
+
+            do_curl "https://github.com/AviSynth/AviSynthPlus/archive/v3.7.3/avisynthplus-3.7.3.tar.gz" AviSynthPlus-3.7.3.tar.gz
+
+            # Criar diretório de build se não existir
+            if [[ ! -d "build" ]]; then
+                mkdir build
+            fi
+
+            # Configurar o cmake com as opções fornecidas
+            cmake -B build -S "." \
+                -G 'Unix Makefiles' \
+                -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                -DCMAKE_INSTALL_LIBDIR="$LOCALDESTDIR/lib" \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DCMAKE_BUILD_TYPE:STRING='None' \
+                -Wno-dev
+
+            # Compilar e instalar o AviSynthPlus
+            cmake --build build --parallel "$cpuCount"
+            cmake --install build --prefix "$LOCALDESTDIR"
+
+            # Verificar se o binário foi gerado
+            do_checkIfExist AviSynthPlus-3.7.3 libavisynth.a
+        fi
+    fi
+
 }
 
 buildFfmpeg() {
@@ -1336,7 +1371,7 @@ buildFfmpeg() {
     echo "compile ffmpeg"
     echo "-------------------------------------------------------------------------------"
 
-    do_git "https://git.ffmpeg.org/ffmpeg.git" "ffmpeg-n7.0" "" "n7.0"
+    do_git "https://git.ffmpeg.org/ffmpeg.git" "ffmpeg-7.1" "" "507a51fbe9732f0f6f12f43ce12431e8faa834b7"
 
     if [[ $compile == "true" ]] || [[ $buildFFmpeg == "true" ]] || [[ ! -f "$LOCALDESTDIR/bin/ffmpeg" ]] && [[ ! -f "$LOCALDESTDIR/bin/ffmpeg_shared/bin/ffmpeg" ]]; then
         if [[ "$ffmpeg_shared" == "yes" ]]; then
@@ -1383,6 +1418,10 @@ buildFfmpeg() {
             make distclean
         fi
 
+        git cherry-pick -n bcfbf2bac8f9eeeedc407b40596f5c7aaa0d5b47
+        git cherry-pick -n d0facac679faf45d3356dff2e2cb382580d7a521
+        git apply ../../patches/fix_build_with_texinfo-7.2.patch
+        
         if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libndi_newtek" ]]; then
             git apply ../../patches/revert-libndi_newtek.patch
             cp ../../patches/libndi/libavdevice/libndi_newtek_* libavdevice/
