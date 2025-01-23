@@ -1,0 +1,14 @@
+--enable-cuda
+--enable-cuvid
+--enable-nvenc
+--enable-nonfree
+--enable-libnpp
+--extra-cflags=-I/usr/local/cuda/include
+--extra-cflags=-I/root/ffmpeg_build/include
+--extra-ldflags=-L/root/ffmpeg_build/lib
+--pkg-config-flags=--static
+--extra-ldflags=-L/usr/local/cuda/lib64
+--enable-cuda-nvcc
+--nvccflags='-gencode arch=compute_50,code=sm_50 -O2'
+--enable-cuda-llvm
+--enable-libsrt
