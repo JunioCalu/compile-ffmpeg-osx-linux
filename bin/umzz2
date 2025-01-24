@@ -1,0 +1,5 @@
+#!/usr/bin/env pypy3
+
+from umzz import cli
+
+cli()

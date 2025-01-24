@@ -1,0 +1,5 @@
+#!/usr/local/bin/pypy3.10
+
+from m3ufu import cli 
+
+cli()
