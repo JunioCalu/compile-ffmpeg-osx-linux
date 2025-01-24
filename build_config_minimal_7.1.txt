@@ -1,0 +1,19 @@
+--nvccflags=-gencode arch=compute_50,code=sm_50 -O2
+--disable-debug
+--enable-nonfree
+--enable-cuda
+--enable-cuvid
+--enable-nvdec
+--enable-nvenc
+--enable-libnpp
+--enable-cuda-nvcc
+--enable-cuda-llvm
+--enable-libfdk-aac
+--enable-libmp3lame
+--enable-libvorbis
+--enable-libopus
+--enable-libopenjpeg
+--enable-libwebp
+--disable-sdl2
+--enable-libsrt
+--enable-lto

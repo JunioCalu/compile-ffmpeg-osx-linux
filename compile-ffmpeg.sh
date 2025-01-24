@@ -197,13 +197,16 @@ do_prompt() {
     read -r -p "$1"
 }
 
-# get git clone, or update
+# get git clone, checkout, or update
 do_git() {
     local gitURL="$1"
     local gitFolder="$2"
     local gitDepth="$3"
     local gitBranch="$4"
+    local gitCommit="$5"  # Novo parâmetro para o commit
+    
     echo -ne "\033]0;compile $gitFolder\007"
+    
     if [ ! -d "$gitFolder" ]; then
         if [[ $gitDepth == "noDepth" ]]; then
             git clone "$gitURL" "$gitFolder"
@@ -224,6 +227,13 @@ do_git() {
         if [[ "$oldHead" != "$newHead" ]]; then
             compile="true"
         fi
+    fi
+    
+    # Se um commit específico foi fornecido, faz o checkout
+    if [[ -n "$gitCommit" ]]; then
+        git fetch origin
+        git checkout "$gitCommit"
+        compile="true"
     fi
 }
 
@@ -1371,7 +1381,7 @@ buildFfmpeg() {
     echo "compile ffmpeg"
     echo "-------------------------------------------------------------------------------"
 
-    do_git "https://git.ffmpeg.org/ffmpeg.git" "ffmpeg-7.1" "noDepth" "507a51fbe9732f0f6f12f43ce12431e8faa834b7"
+    do_git "https://git.ffmpeg.org/ffmpeg.git" "ffmpeg-7.1" "noDepth" "" "507a51fbe9732f0f6f12f43ce12431e8faa834b7"
 
     if [[ $compile == "true" ]] || [[ $buildFFmpeg == "true" ]] || [[ ! -f "$LOCALDESTDIR/bin/ffmpeg" ]] && [[ ! -f "$LOCALDESTDIR/bin/ffmpeg_shared/bin/ffmpeg" ]]; then
         if [[ "$ffmpeg_shared" == "yes" ]]; then
