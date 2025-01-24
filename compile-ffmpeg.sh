@@ -46,11 +46,13 @@ fi
 
 if [[ "$optimize" == "y" ]] || [[ "$arch" != "x86_64" ]]; then
     tune="native"
+    mtune="native"
     onum=2
     cpuDetect=""
     vpxFlags=""
 else
-    tune="generic"
+    tune="x86-64"
+    mtune="generic"
     onum=2
     cpuDetect="--enable-runtime-cpudetect"
     vpxFlags="--enable-postproc --enable-vp9-postproc --enable-runtime-cpu-detect"
@@ -152,9 +154,9 @@ else
     cpuCount=$( nproc | awk '{ print $1 - 1 }' )
     compNasm="yes"
     osLib=""
-    osFlag="--enable-pic"
+    #osFlag="--enable-pic"
     arch=""
-    fpic="-fPIC"
+    #fpic="-fPIC"
     sd="sed"
     extraLibs="-lpthread"
 fi
@@ -183,7 +185,7 @@ export LOCALBUILDDIR LOCALDESTDIR
 
 PKG_CONFIG_PATH="${LOCALDESTDIR}/lib/pkgconfig"
 CPPFLAGS="-I${LOCALDESTDIR}/include $fpic $osExtra"
-CFLAGS="-I${LOCALDESTDIR}/include -mtune=$tune -O$onum $osExtra $fpic"
+CFLAGS="-I${LOCALDESTDIR}/include -mtune=$mtune -O$onum $osExtra $fpic"
 CXXFLAGS="${CFLAGS}"
 LDFLAGS="-L${LOCALDESTDIR}/lib -pipe $osExtra"
 export PKG_CONFIG_PATH CPPFLAGS CFLAGS CXXFLAGS LDFLAGS
@@ -714,7 +716,7 @@ buildLibs() {
 
             do_curl "https://www.openssl.org/source/openssl-1.1.1u.tar.gz"
 
-            ./Configure --prefix=$LOCALDESTDIR --openssldir=$LOCALDESTDIR $target --libdir="$LOCALDESTDIR/lib" no-shared enable-camellia enable-idea enable-mdc2 enable-rfc3779 -mtune=$tune $osExtra
+            ./Configure --prefix=$LOCALDESTDIR --openssldir=$LOCALDESTDIR $target --libdir="$LOCALDESTDIR/lib" no-shared enable-camellia enable-idea enable-mdc2 enable-rfc3779 -mtune=$mtune $osExtra
 
             make depend all
             make install_sw
@@ -1004,7 +1006,7 @@ buildLibs() {
                 cd aom_build
             fi
 
-            cmake -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" -DBUILD_SHARED_LIBS=0 -DENABLE_NASM=on -DAOM_EXTRA_C_FLAGS="-mtune=$tune $osExtra" -DAOM_EXTRA_CXX_FLAGS="-mtune=$tune $osExtra" ../
+            cmake -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" -DBUILD_SHARED_LIBS=0 -DENABLE_NASM=on -DAOM_EXTRA_C_FLAGS="-mtune=$mtune $osExtra" -DAOM_EXTRA_CXX_FLAGS="-mtune=$mtune $osExtra" ../
 
             make -j "$cpuCount"
             make install

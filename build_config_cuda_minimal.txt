@@ -11,4 +11,5 @@
 --enable-cuda-nvcc
 --nvccflags='-gencode arch=compute_50,code=sm_50 -O2'
 --enable-cuda-llvm
+--enable-openssl
 --enable-libsrt

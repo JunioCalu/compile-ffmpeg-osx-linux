@@ -1,6 +1,6 @@
 --nvccflags=-gencode arch=compute_50,code=sm_50 -O2
---disable-debug
 --enable-nonfree
+--enable-openssl
 --enable-cuda
 --enable-cuvid
 --enable-nvdec
@@ -16,4 +16,4 @@
 --enable-libwebp
 --disable-sdl2
 --enable-libsrt
---enable-lto
+#--enable-lto
