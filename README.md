@@ -11,12 +11,25 @@ cmake git wget curl pkg-config nasm autoconf automake libtool autogen \
 gnu-sed sdl2 shtool ninja cargo cargo-c meson rsync
 ```
 
-For Linux (ubuntu/debian) is needed:
+For Linux (ubuntu/debian) is needed (tested on ubuntu 24.04):
 
 ```
-sudo apt install autoconf automake build-essential libtool pkg-config texi2html \
-yasm cmake curl git wget gperf ninja-build cargo cargo-c nasm meson rsync xxd
+sudo apt-get install --reinstall -o DPkg::options::="--force-all" -o APT::Force-LoopBreak=true autoconf automake build-essential libtool pkg-config texi2html \
+yasm cmake curl git wget gperf ninja-build cargo cargo-c nasm meson rsync xxd coreutils
 ```
+
+To enable the most relevant ffmpeg compilation options
+
+```
+sudo apt install -y libssl-dev python3 cython3 libgmp-dev libvorbis-dev libwebp-dev libxvidcore-dev libshaderc-dev libunwind-devliblcms2-dev
+```
+
+Dependencies required to run the generated ffmpeg binary on other external machines
+
+```
+sudo apt-get install -y libc6 libgcc-s1 libgmp10 libogg0 libsharpyuv0 libstdc++6 libunwind8 libvorbis0a libvorbisenc2 libwebp7 libwebpmux3 libxvidcore4 libnppc12 libnppicc12 libnppidei12 libnppif12 libnppig12 libvulkan1
+```
+
 On Ubuntu install cargo-c with `cargo install cargo-c`
 
 For rhel based/fedora install:

@@ -1,0 +1,52 @@
+diff --git a/libavfilter/vf_libplacebo.c b/libavfilter/vf_libplacebo.c
+index cfee1117e8..29844413d8 100644
+--- a/libavfilter/vf_libplacebo.c
++++ b/libavfilter/vf_libplacebo.c
+@@ -90,7 +90,6 @@ typedef struct LibplaceboContext {
+     float polar_cutoff;
+     int disable_linear;
+     int disable_builtin;
+-    int force_icc_lut;
+     int force_dither;
+     int disable_fbos;
+ 
+@@ -114,7 +113,6 @@ typedef struct LibplaceboContext {
+     float min_peak;
+     float scene_low;
+     float scene_high;
+-    float overshoot;
+ 
+     /* pl_color_map_params */
+     int intent;
+@@ -384,7 +382,6 @@ static int process_frames(AVFilterContext *avctx, AVFrame *out, AVFrame *in)
+             .minimum_peak = s->min_peak,
+             .scene_threshold_low = s->scene_low,
+             .scene_threshold_high = s->scene_high,
+-            .overshoot_margin = s->overshoot,
+         ),
+ 
+         .color_map_params = pl_color_map_params(
+@@ -416,7 +413,6 @@ static int process_frames(AVFilterContext *avctx, AVFrame *out, AVFrame *in)
+         .polar_cutoff = s->polar_cutoff,
+         .disable_linear_scaling = s->disable_linear,
+         .disable_builtin_scalers = s->disable_builtin,
+-        .force_icc_lut = s->force_icc_lut,
+         .force_dither = s->force_dither,
+         .disable_fbos = s->disable_fbos,
+     };
+@@ -659,7 +655,6 @@ static const AVOption libplacebo_options[] = {
+     { "minimum_peak", "Peak detection minimum peak", OFFSET(min_peak), AV_OPT_TYPE_FLOAT, {.dbl = 1.0}, 0.0, 100.0, DYNAMIC },
+     { "scene_threshold_low", "Scene change low threshold", OFFSET(scene_low), AV_OPT_TYPE_FLOAT, {.dbl = 5.5}, -1.0, 100.0, DYNAMIC },
+     { "scene_threshold_high", "Scene change high threshold", OFFSET(scene_high), AV_OPT_TYPE_FLOAT, {.dbl = 10.0}, -1.0, 100.0, DYNAMIC },
+-    { "overshoot", "Tone-mapping overshoot margin", OFFSET(overshoot), AV_OPT_TYPE_FLOAT, {.dbl = 0.05}, 0.0, 1.0, DYNAMIC },
+ 
+     { "intent", "Rendering intent", OFFSET(intent), AV_OPT_TYPE_INT, {.i64 = PL_INTENT_RELATIVE_COLORIMETRIC}, 0, 3, DYNAMIC, "intent" },
+         { "perceptual", "Perceptual", 0, AV_OPT_TYPE_CONST, {.i64 = PL_INTENT_PERCEPTUAL}, 0, 0, STATIC, "intent" },
+@@ -721,7 +716,6 @@ static const AVOption libplacebo_options[] = {
+     { "polar_cutoff", "Polar LUT cutoff", OFFSET(polar_cutoff), AV_OPT_TYPE_FLOAT, {.dbl = 0}, 0.0, 1.0, DYNAMIC },
+     { "disable_linear", "Disable linear scaling", OFFSET(disable_linear), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, DYNAMIC },
+     { "disable_builtin", "Disable built-in scalers", OFFSET(disable_builtin), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, DYNAMIC },
+-    { "force_icc_lut", "Force the use of a full ICC 3DLUT for color mapping", OFFSET(force_icc_lut), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, DYNAMIC },
+     { "force_dither", "Force dithering", OFFSET(force_dither), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, DYNAMIC },
+     { "disable_fbos", "Force-disable FBOs", OFFSET(disable_fbos), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, DYNAMIC },
+     { NULL },

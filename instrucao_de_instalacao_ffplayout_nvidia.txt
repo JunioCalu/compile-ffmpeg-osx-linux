@@ -1,0 +1,58 @@
+verificar o que está instalado remover instalações conflitantes caso encontradas:
+
+dpkg -l | grep -ie cuda
+
+#configurações iniciais:
+
+verificar se a configuração de blocklist está correta em:
+cat "/etc/modprobe.d/blacklist-nvidia-nouveau.conf"
+
+#caso contrário:
+
+bash -c "echo blacklist nouveau > /etc/modprobe.d/blacklist-nvidia-nouveau.conf"
+
+bash -c "echo options nouveau modeset=0 >> /etc/modprobe.d/blacklist-nvidia-nouveau.conf"
+
+echo 0 > /sys/class/vtconsole/vtcon1/bind
+
+#baixar o driver proprietário da placa de vídeo
+
+https://www.nvidia.com/pt-br/drivers/
+
+chmod +x NVIDIA-Linux-x86_64-versao.run
+
+sudo./NVIDIA-Linux-x86_64-570.144.run --dkms
+
+baixar o cuda toolkid para placa
+
+https://developer.nvidia.com/cuda-downloads
+
+sudo ./cuda_versao_linux.run
+
+sudo bash -c 'echo "/usr/local/cuda-12.9/lib64" > /etc/ld.so.conf.d/cuda.conf'
+
+sudo ldconfig
+
+#verificar arquitetura da GPU
+
+nvidia-smi --query-gpu=name,compute_cap --format=csv
+
+#Editar build_config.txt, substituir 'xx' pelo número encontrado se compute_cap=6.1 então xx=61
+
+--nvccflags=-gencode arch=compute_xx,code=sm_xx -O2
+
+#Instalação de dependencias
+
+For Linux (ubuntu/debian) is needed (tested on ubuntu 24.04):
+
+```
+sudo apt-get install --reinstall -o DPkg::options::="--force-all" -o APT::Force-LoopBreak=true autoconf automake build-essential libtool pkg-config texi2html \
+yasm cmake curl git wget gperf ninja-build cargo cargo-c nasm meson rsync xxd
+```
+
+To enable all build options in ffmpeg
+
+```
+sudo apt install libssl-dev python3 cython3 libgmp-dev libvorbis-dev libwebp-dev libxvidcore-dev libshaderc-dev libunwind-dev liblcms2-dev
+```
+

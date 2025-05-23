@@ -1,0 +1,308 @@
+## Opções Ativas e Por Que São Úteis:
+
+```
+--enable-static
+```
+**Função**: Compila biblioteca estática em vez de compartilhada  
+**Por que é útil**: Portabilidade total, sem dependências externas em runtime
+
+```
+--enable-nonfree
+```
+**Função**: Permite código não-livre  
+**Por que é útil**: Acesso a codecs de alta performance como libfdk-aac
+
+```
+--enable-cuda-llvm
+```
+**Função**: Suporte CUDA via LLVM (compilação)  
+**Por que é útil**: Melhor otimização para filtros CUDA
+
+```
+--enable-cuda-nvcc
+```
+**Função**: Suporte CUDA via compilador NVIDIA  
+**Por que é útil**: Acesso direto às APIs CUDA oficiais
+
+```
+--nvccflags=-gencode arch=compute_61,code=sm_61 -O2
+```
+**Função**: Flags para o compilador CUDA  
+**Por que é útil**: Otimizado para GPUs Pascal (GTX 1000)
+
+```
+--enable-decklink
+```
+**Função**: Suporte a placas Blackmagic DeckLink  
+**Por que é útil**: Captura/reprodução em hardware broadcast profissional
+
+```
+--enable-libklvanc
+```
+**Função**: Processamento de dados ancilares VANC  
+**Por que é útil**: Metadados em vídeos broadcast (timecode, closed captions)
+
+```
+--enable-librist
+```
+**Função**: Reliable Internet Stream Transport  
+**Por que é útil**: Streaming profissional tolerante a falhas de rede
+
+```
+--enable-libshaderc
+```
+**Função**: Compilador de shaders para Vulkan  
+**Por que é útil**: Processamento GPU avançado, filtros personalizados
+
+```
+--enable-libtwolame
+```
+**Função**: Codificador MP2 de alta qualidade  
+**Por que é útil**: Ideal para broadcast (DVB, ATSC)
+
+```
+--enable-openssl
+```
+**Função**: Criptografia e segurança  
+**Por que é útil**: Streaming seguro (HTTPS, SRT criptografado)
+
+```
+--enable-libzmq
+```
+**Função**: ZeroMQ (mensagens distribuídas)  
+**Por que é útil**: Permite pipeline distribuído e comunicação entre processos
+
+```
+--enable-libnpp
+```
+**Função**: NVIDIA Performance Primitives  
+**Por que é útil**: Aceleração hardware NVIDIA para processamento de imagem
+
+```
+--enable-libfontconfig
+```
+**Função**: Gestão de fontes do sistema  
+**Por que é útil**: Renderização de texto de alta qualidade
+
+```
+--enable-gmp
+```
+**Função**: GNU Multiple Precision (matemática precisa)  
+**Por que é útil**: Cálculos de alta precisão para timestamps
+
+```
+--disable-gnutls
+```
+**Função**: Desativa GnuTLS  
+**Por que é útil**: Evita conflito com OpenSSL, já habilitado
+
+```
+--enable-libaom
+```
+**Função**: Codec AV1 da Alliance for Open Media  
+**Por que é útil**: Codec de última geração, royalty-free
+
+```
+--enable-libbluray
+```
+**Função**: Suporte a Blu-ray  
+**Por que é útil**: Leitura/extração de discos Blu-ray
+
+```
+--enable-libdav1d
+```
+**Função**: Decodificador AV1 rápido  
+**Por que é útil**: Descoficação AV1 de alta performance
+
+```
+--enable-libfreetype
+```
+**Função**: Renderização de fontes  
+**Por que é útil**: Texto de alta qualidade em vídeos
+
+```
+--enable-libfdk-aac
+```
+**Função**: Codec AAC da Fraunhofer  
+**Por que é útil**: Melhor qualidade AAC disponível
+
+```
+--enable-libfribidi
+```
+**Função**: Suporte a texto bidirecional  
+**Por que é útil**: Legendas em árabe, hebraico e outras línguas RTL
+
+```
+--enable-libmp3lame
+```
+**Função**: Codificador MP3 LAME  
+**Por que é útil**: Melhor encoder MP3 existente
+
+```
+--enable-libopenjpeg
+```
+**Função**: Codec JPEG 2000  
+**Por que é útil**: Formatos de cinema digital (DCP), imagens médicas
+
+```
+--enable-libopus
+```
+**Função**: Codec de áudio Opus  
+**Por que é útil**: Alta qualidade, baixa latência para streaming
+
+```
+--enable-libplacebo
+```
+**Função**: Biblioteca de rendering de vídeo  
+**Por que é útil**: Tone-mapping HDR, shaders de alta qualidade
+
+```
+--enable-librav1e
+```
+**Função**: Codificador AV1 em Rust  
+**Por que é útil**: Alternativa rápida para codificação AV1
+
+```
+--enable-libsrt
+```
+**Função**: Secure Reliable Transport  
+**Por que é útil**: Streaming de baixa latência sobre Internet pública
+
+```
+--enable-libsvtav1
+```
+**Função**: Codec AV1 da Intel (SVT)  
+**Por que é útil**: Codificação AV1 paralela e rápida
+
+```
+--enable-libvmaf
+```
+**Função**: Video Multi-Method Assessment Fusion  
+**Por que é útil**: Métricas de qualidade perceptual de vídeo
+
+```
+--enable-libvorbis
+```
+**Função**: Codec de áudio Vorbis (OGG)  
+**Por que é útil**: Alternativa livre ao MP3, boa qualidade
+
+```
+--enable-libvpx
+```
+**Função**: Codecs VP8/VP9 do Google  
+**Por que é útil**: Formatos WebM/HTML5, boa compressão
+
+```
+--enable-libwebp
+```
+**Função**: Formato de imagem WebP  
+**Por que é útil**: Imagens compactas para web, suporte a animação
+
+```
+--enable-libx264
+```
+**Função**: Codificador H.264 de alta qualidade  
+**Por que é útil**: Padrão da indústria, excelente relação qualidade/tamanho
+
+```
+--enable-libx265
+```
+**Função**: Codificador H.265/HEVC  
+**Por que é útil**: Nova geração, 50% melhor que H.264
+
+```
+--enable-libxml2
+```
+**Função**: Parser XML  
+**Por que é útil**: Processamento de metadados, manifests de streaming
+
+```
+--enable-libxvid
+```
+**Função**: Codec MPEG-4 ASP (Xvid)  
+**Por que é útil**: Compatibilidade com players antigos
+
+```
+--enable-libzimg
+```
+**Função**: Biblioteca de processamento de imagem Z  
+**Por que é útil**: Conversão de cores e escala de altíssima qualidade
+
+```
+--enable-cuda
+```
+**Função**: Suporte CUDA geral  
+**Por que é útil**: Framework para aceleração NVIDIA
+
+```
+--enable-nvdec
+```
+**Função**: Decodificação NVIDIA  
+**Por que é útil**: Decodificação por hardware, economiza CPU
+
+```
+--enable-nvenc
+```
+**Função**: Codificação NVIDIA  
+**Por que é útil**: Codificação H.264/HEVC por hardware, muito rápida
+
+```
+--enable-cuvid
+```
+**Função**: CUDA Video Decoder legado  
+**Por que é útil**: Compatibilidade com GPUs mais antigas
+
+```
+--enable-parser=h264
+--enable-parser=aac
+```
+**Função**: Parsers H.264 e AAC  
+**Por que é útil**: Análise eficiente desses formatos, extração de frames
+
+```
+--disable-ffplay
+```
+**Função**: Desativa o player FFplay  
+**Por que é útil**: Reduz tamanho da build, foco em conversão
+
+```
+--disable-sdl2
+```
+**Função**: Desativa biblioteca SDL2  
+**Por que é útil**: Não necessária sem interface gráfica
+
+```
+--disable-vulkan
+```
+**Função**: Desativa API Vulkan  
+**Por que é útil**: Foco em CUDA, evita dependências desnecessárias
+
+```
+--disable-vdpau
+--disable-vaapi
+```
+**Função**: Desativa APIs alternativas de aceleração  
+**Por que é útil**: CUDA/NVENC já atendem as necessidades
+
+```
+--disable-libdrm
+```
+**Função**: Desativa Direct Rendering Manager  
+**Por que é útil**: Desnecessário com CUDA, evita conflitos
+
+```
+--disable-alsa
+--disable-sndio
+```
+**Função**: Desativa interfaces de áudio  
+**Por que é útil**: Foco em processamento, não reprodução
+
+```
+--disable-xlib
+--disable-libxcb
+--disable-libxcb-shm
+--disable-libxcb-xfixes
+--disable-libxcb-shape
+```
+**Função**: Desativa interfaces X11  
+**Por que é útil**: Build sem dependências gráficas, para servidor headless

@@ -1,0 +1,53 @@
+diff --git a/configure b/configure
+index 87b65d86d1..c3d966f5e0 100755
+--- a/configure
++++ b/configure
+@@ -342,6 +342,7 @@ External library support:
+   --enable-libdrm          enable DRM code (Linux) [no]
+   --enable-libmfx          enable Intel MediaSDK (AKA Quick Sync Video) code via libmfx [no]
+   --enable-libnpp          enable Nvidia Performance Primitives-based code [no]
++  --disable-libnpp-static  disable using static version of libnpp [autodetect]
+   --enable-mmal            enable Broadcom Multi-Media Abstraction Layer (Raspberry Pi) via MMAL [no]
+   --disable-nvdec          disable Nvidia video decoding acceleration (via hwaccel) [autodetect]
+   --disable-nvenc          disable Nvidia video encoding code [autodetect]
+@@ -1916,6 +1917,7 @@ HWACCEL_LIBRARY_NONFREE_LIST="
+     cuda_nvcc
+     cuda_sdk
+     libnpp
++    libnpp_static
+ "
+ 
+ HWACCEL_LIBRARY_LIST="
+@@ -6596,9 +6598,29 @@ enabled libmodplug        && require_pkg_config libmodplug libmodplug libmodplug
+ enabled libmp3lame        && require "libmp3lame >= 3.98.3" lame/lame.h lame_set_VBR_quality -lmp3lame $libm_extralibs
+ enabled libmysofa         && { check_pkg_config libmysofa libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine ||
+                                require libmysofa mysofa.h mysofa_neighborhood_init_withstepdefine -lmysofa $zlib_extralibs; }
+-enabled libnpp            && { check_lib libnpp npp.h nppGetLibVersion -lnppig -lnppicc -lnppc -lnppidei -lnppif ||
+-                               check_lib libnpp npp.h nppGetLibVersion -lnppi -lnppif -lnppc -lnppidei ||
+-                               die "ERROR: libnpp not found"; }
++enabled libnpp            && { { if ! disabled libnpp_static; then
++                              check_lib libnpp npp.h nppGetLibVersion \
++                                -lnppig_static -lnppicc_static -lnppif_static -lnppim_static \
++                                -lnppitc_static -lnppial_static -lnppisu_static -lnppist_static \
++                                -lnppidei_static -lnpps_static -lnppc_static \
++                                -lcudart_static -lculibos $ldl ||
++                              check_lib libnpp npp.h nppGetLibVersion \
++                                -lnppig_static -lnppicc_static -lnppif_static -lnppim_static \
++                                -lnppitc_static -lnppial_static -lnppisu_static -lnppist_static \
++                                -lnppidei_static -lnpps_static -lnppc_static \
++                                -lcudart_static -lculibos $ldl -lstdc++ ||
++                              check_lib libnpp npp.h nppGetLibVersion \
++                                -lnppig_static -lnppicc_static -lnppif_static -lnppim_static \
++                                -lnppitc_static -lnppial_static -lnppisu_static -lnppist_static \
++                                -lnppidei_static -lnpps_static -lnppc_static \
++                                -lcudart_static -lculibos $ldl -lstdc++ -lrt
++                            else false; fi; } ||
++                            { if ! enabled libnpp_static; then
++                              require libnpp npp.h nppGetLibVersion \
++                                -lnppig -lnppicc -lnppif -lnppim -lnppitc -lnppial \
++                                -lnppisu -lnppist -lnppidei -lnpps -lnppc
++                            else false; fi; } ||
++                            die "ERROR: libnpp not found"; }
+ enabled libopencore_amrnb && require libopencore_amrnb opencore-amrnb/interf_dec.h Decoder_Interface_init -lopencore-amrnb
+ enabled libopencore_amrwb && require libopencore_amrwb opencore-amrwb/dec_if.h D_IF_init -lopencore-amrwb
+ enabled libopencv         && { check_headers opencv2/core/core_c.h &&

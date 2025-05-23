@@ -1,0 +1,219 @@
+## Opções Comentadas e Por Que Não São Úteis:
+
+```
+#--disable-debug
+```
+**Função**: Desabilita símbolos de debug  
+**Por que não é útil**: Já está habilitado por padrão no script de compilação
+
+```
+#--disable-autodetect
+```
+**Função**: Desabilita detecção automática de bibliotecas  
+**Por que não é útil**: Causa erro de compilação
+
+```
+#--disable-shared
+```
+**Função**: Desabilita bibliotecas compartilhadas  
+**Por que não é útil**: Já está habilitado por padrão no script de compilação
+
+```
+#--pkg-config-flags=--static
+```
+**Função**: Força pkg-config a usar libs estáticas  
+**Por que não é útil**: Já está habilitado por padrão no script de compilação
+
+```
+#--enable-amf
+```
+**Função**: AMD Media Framework (codificação GPU AMD)  
+**Por que não é útil**: Sistema usa NVIDIA, não AMD
+
+```
+#--enable-avisynth
+```
+**Função**: Suporte a scripts AviSynth para processamento de vídeo  
+**Por que não é útil**: Raramente usado, mais comum no Windows
+
+```
+#--enable-lto
+```
+**Função**: Link Time Optimization (otimização na linkagem)  
+**Por que não é útil**: Aumenta muito tempo de compilação, ganho mínimo
+
+```
+#--enable-gpl
+```
+**Função**: Habilita componentes GPL (libx264, etc)  
+**Por que não é útil**: Já está habilitado por padrão no script de compilação
+
+```
+#--enable-ladspa
+```
+**Função**: Linux Audio Developer's Simple Plugin API  
+**Por que não é útil**: Plugins de áudio raramente usados, VST é mais comum
+
+```
+#--enable-libass
+```
+**Função**: Renderização avançada de legendas (ASS/SSA)  
+**Por que não é útil**: Não essencial se não trabalha com legendas complexas
+
+```
+#--enable-libbs2b
+```
+**Função**: Bauer Stereophonic-to-Binaural (efeito fone de ouvido)  
+**Por que não é útil**: Efeito muito específico, raramente necessário
+
+```
+#--enable-libdrm
+```
+**Função**: Direct Rendering Manager (GPU Linux)  
+**Por que não é útil**: Já desabilitado explicitamente, redundante
+
+```
+#--enable-libgsm
+```
+**Função**: Codec de voz GSM (telefonia)  
+**Por que não é útil**: Codec antigo, pouco usado hoje
+
+```
+#--enable-libharfbuzz
+```
+**Função**: Shaping de texto complexo (árabe, hindi)  
+**Por que não é útil**: Não é uma opção disponível no ffmpeg 5.1.6 ou 5.1.4,
+é ativado por autodetecção durante a compilação do ffmpeg 5.1. 
+
+```
+#--enable-libiec61883
+```
+**Função**: Captura FireWire/DV  
+**Por que não é útil**: Tecnologia obsoleta, poucos usam FireWire
+
+```
+#--enable-libjack
+```
+**Função**: JACK Audio Connection Kit  
+**Por que não é útil**: Para produção de áudio profissional, não conversão
+
+```
+#--enable-libjxl
+```
+**Função**: JPEG XL (formato de imagem novo)  
+**Por que não é útil**: Formato ainda pouco adotado
+
+```
+#--enable-libmodplug
+```
+**Função**: Música tracker (MOD, S3M, XM)  
+**Por que não é útil**: Formatos muito nichados, década de 90
+
+```
+#--enable-libopencore-amrnb
+#--enable-libopencore-amrwb
+```
+**Função**: Codecs AMR para voz (telefonia móvel)  
+**Por que não é útil**: Específico para telecomunicações, qualidade baixa
+
+```
+#--enable-libpulse
+```
+**Função**: PulseAudio (sistema de som Linux)  
+**Por que não é útil**: Desnecessário para conversão, só para captura/playback
+
+```
+#--enable-librsvg
+```
+**Função**: Renderização de SVG  
+**Por que não é útil**: Raramente precisa converter SVG em vídeo
+
+```
+#--enable-librubberband
+```
+**Função**: Time-stretching e pitch-shifting de áudio  
+**Por que não é útil**: Recursos especializados, não uso geral
+
+```
+#--enable-libsnappy
+```
+**Função**: Compressão rápida (usado em HAP)  
+**Por que não é útil**: Formato HAP é nicho (edição Mac)
+
+```
+#--enable-libsoxr
+```
+**Função**: Reamostragem de áudio alta qualidade  
+**Por que não é útil**: Resampler padrão é suficiente para maioria
+
+```
+#--enable-libspeex
+```
+**Função**: Codec de voz Speex  
+**Por que não é útil**: Obsoleto, Opus é melhor
+
+```
+#--enable-libssh
+```
+**Função**: Protocolo SSH para transferência  
+**Por que não é útil**: Raramente usado, melhor usar ferramentas dedicadas
+
+```
+#--enable-libtheora
+```
+**Função**: Codec de vídeo Theora  
+**Por que não é útil**: Obsoleto, VP8/VP9 são melhores
+
+```
+#--enable-libv4l2
+```
+**Função**: Video4Linux2 (captura webcam/TV)  
+**Por que não é útil**: Apenas para captura, não conversão
+
+```
+#--enable-libvidstab
+```
+**Função**: Estabilização de vídeo  
+**Por que não é útil**: Processo lento, melhor em pós-produção dedicada
+
+```
+#--enable-libvpl
+```
+**Função**: Intel Video Processing Library  
+**Por que não é útil**: Sistema usa NVIDIA, não Intel
+
+```
+#--enable-libxcb
+```
+**Função**: X11 via XCB (captura de tela)  
+**Por que não é útil**: Já desabilitado explicitamente
+
+```
+#--enable-opencl
+```
+**Função**: Processamento GPU genérico  
+**Por que não é útil**: CUDA é mais eficiente para NVIDIA
+
+```
+#--enable-opengl
+```
+**Função**: Renderização OpenGL  
+**Por que não é útil**: Para visualização, não processamento
+
+```
+#--enable-vapoursynth
+```
+**Função**: Framework de processamento de vídeo (como AviSynth)  
+**Por que não é útil**: Complexo, melhor usar filtros nativos
+
+```
+#--enable-version3
+```
+**Função**: Permite componentes LGPL v3  
+**Por que não é útil**: Já está habilitado por padrão no script de compilação
+
+```
+#--enable-vulkan
+```
+**Função**: API gráfica Vulkan  
+**Por que não é útil**: Experimental, CUDA é mais maduro para NVIDIA
