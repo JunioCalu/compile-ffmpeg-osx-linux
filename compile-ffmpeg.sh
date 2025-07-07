@@ -2273,20 +2273,48 @@ buildLibs() {
         
         if [ -f "$LOCALDESTDIR/lib/libshaderc_shared.a" ]; then
             echo -------------------------------------------------
-            echo "shaderc is already compiled"
+            echo "shaderc-2023.8 is already compiled"
             echo -------------------------------------------------
         else
             echo -ne "\033]0;compile shaderc\007"
             
-            cd /ffmpeg-build/build/
-            rm -rf shaderc-*
+            #do_curl "https://github.com/google/shaderc/archive/v2023.8/shaderc-2023.8.tar.gz"
+
+            # Download original source
+            do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/shaderc/2023.8-1build1/shaderc_2023.8.orig.tar.gz"
+
+            # Download Debian patches
+            #do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/shaderc/2023.8-1build1/shaderc_2023.8-1build1.debian.tar.xz"
+
+            #cd ..
+            # Apply Debian patches in order
+            echo "Aplicando patches Debian..."
+
+            ls
+            ls ./debian/patches           
+            echo "PWD: $PWD"
+
+            #patch_dir="./debian/patches"
+            #patches=(
+            #    "fix-cmake-python_executable.patch"
+            #    "fix-manpage.patch"
+            #    "fix-python-interpreter.patch"
+            #    "rename-libshaderc.patch"
+            #    "use-system-thirdparties.patch"
+            #)
+
+            #for patch in "${patches[@]}"; do
+            #    if [ -f "$patch_dir/$patch" ]; then
+            #        echo "Aplicando patch: $patch"
+            #        patch -Np1 -i "$patch_dir/$patch" || echo "⚠️ Patch $patch falhou"
+            #    fi
+            #done
+
             
-            # IMPORTANTE: Use git clone, não tarball
-            echo "Clonando shaderc com dependências..."
-            git clone --recursive --depth 1 --branch v2023.8 https://github.com/google/shaderc.git shaderc-2023.8
-            cd shaderc-2023.8
+            # Prepare - de-vendor libs and disable git versioning
+            echo "Preparando shaderc..."
             
-            # Remove examples
+            # Remove examples and third_party dependencies
             sed '/examples/d;/third_party/d' -i CMakeLists.txt
             sed '/build-version/d' -i glslc/CMakeLists.txt
             
@@ -2297,8 +2325,12 @@ buildLibs() {
             "14.0.0\\n"
 		EOF
 
-            # Build
-            mkdir build && cd build
+            # Create build directory
+            mkdir -p build
+            cd build || exit
+            
+            # Configure with CMake for static build using local dependencies
+            # Configure with CMake for static build
             cmake .. \
                 -G Ninja \
                 -DCMAKE_BUILD_TYPE=Release \
@@ -2310,16 +2342,55 @@ buildLibs() {
                 -DSHADERC_SKIP_EXAMPLES=ON \
                 -DPYTHON_EXECUTABLE=python3 \
                 -Dglslang_SOURCE_DIR="$LOCALDESTDIR/include/glslang"
+                #-DSPIRVHEADERS_SOURCE_DIR="$LOCALDESTDIR" \
+                #-DSPIRVTOOLS_SOURCE_DIR="$LOCALDESTDIR" \
+                #-DCMAKE_PREFIX_PATH="$LOCALDESTDIR" \
+                #-DPKG_CONFIG_PATH="$LOCALDESTDIR/lib/pkgconfig" \
+                #-DCMAKE_EXE_LINKER_FLAGS="-L$LOCALDESTDIR/lib -lglslang -lSPIRV -lglslang-default-resource-limits -lMachineIndependent -lGenericCodeGen -lOSDependent -lOGLCompiler -lHLSL -lSPIRV-Tools -lSPIRV-Tools-opt"
+
             
+            # Build
             ninja
+            
+            # Install
             ninja install
             
-            do_checkIfExist shaderc-2023.8 libshaderc_shared.a
+            # Build manual page if asciidoctor is available
+            #if command -v asciidoctor >/dev/null 2>&1; then
+            #    cd glslc || exit
+            #    asciidoctor -b manpage README.asciidoc -o glslc.1 2>/dev/null || true
+                
+                # Install manual page
+            #    mkdir -p "$LOCALDESTDIR/share/man/man1"
+            #    if [ -f "glslc.1" ]; then
+            #        cp glslc.1 "$LOCALDESTDIR/share/man/man1/"
+            #    fi
+                
+            #    cd ..
+            #fi
             
-            echo "✅ shaderc compilado com sucesso"
+            # Remove unused shaderc_static.pc if it exists
+            #if [ -f "$LOCALDESTDIR/lib/pkgconfig/shaderc_static.pc" ]; then
+            #    rm "$LOCALDESTDIR/lib/pkgconfig/shaderc_static.pc"
+            #fi
+            
+            # For static builds, ensure proper flags in pkg-config
+            #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc" ]]; then
+            #    echo "Corrigindo shaderc.pc para build estático..."
+                
+                # Remove dynamic library references and add static dependencies
+            #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc"
+                
+                # Add static dependencies for glslang and spirv-tools
+            #    $sd -ri "s/(Libs\:.*)/\1 -lglslang -lglslang-default-resource-limits -lSPIRV-Tools -lSPIRV-Tools-opt -lSPIRV-Tools-link -lSPIRV-Tools-reduce/g" "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc"
+            #fi
+            
+            do_checkIfExist shaderc-2028.3 libshaderc_shared.a
+            
+            echo "✅ shaderc compilado com sucesso com todas as dependências (spirv-headers, spirv-tools)"
         fi
     fi
-
+    
     # Criar lista de exclusões
     RSYNC_EXCLUDES=(
         --exclude='lib/libshaderc_shared.so*'
@@ -2861,7 +2932,7 @@ buildLibs() {
             fi
             
             # Corrigir o define de exportação para compilação estática
-            sed 's/DPL_EXPORT/DPL_STATIC/' src/meson.build
+            sed 's/DPL_EXPORT/DPL_STATIC/' -i src/meson.build
             
             rm -rf build
             mkdir build
