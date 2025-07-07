@@ -21,7 +21,7 @@ yasm cmake curl git wget gperf ninja-build cargo cargo-c nasm meson rsync xxd co
 To enable the most relevant ffmpeg compilation options
 
 ```
-sudo apt install -y libssl-dev python3 cython3 libgmp-dev libvorbis-dev libwebp-dev libxvidcore-dev libshaderc-dev libunwind-devliblcms2-dev
+sudo apt install -y libssl-dev python3 cython3
 ```
 
 Dependencies required to run the generated ffmpeg binary on other external machines

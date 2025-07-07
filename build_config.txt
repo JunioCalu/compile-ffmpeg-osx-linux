@@ -3,7 +3,7 @@
 --enable-nonfree
 --enable-cuda-llvm
 --enable-cuda-nvcc
---nvccflags=-gencode arch=compute_61,code=sm_61 -O2
+--nvccflags=-gencode arch=compute_75,code=sm_75 -O2
 --enable-decklink
 --enable-libklvanc
 --enable-librist
@@ -12,11 +12,10 @@
 --enable-openssl
 --enable-librtmp
 --enable-libzmq
-#--enable-libnpp
---enable-libnpp-static
+--enable-libnpp
 --enable-libfontconfig
 --enable-frei0r
-#--enable-gmp
+--enable-gmp
 --disable-gnutls
 --enable-libaom
 --enable-libbluray

@@ -161,6 +161,17 @@ else
     extraLibs="-lpthread"
 fi
 
+if [[ "$osExtra" == *"-static-libstdc++ -static-libgcc"* ]]; then
+    STATIC_LIBM="-Wl,-Bstatic -lm -Wl,-Bdynamic"
+    #STATIC_LIBSTDCPP=""
+    STATIC_LIBSTDCPP="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
+    #STATIC_BUILD="true"
+else
+    STATIC_LIBM="-lm"
+    STATIC_LIBSTDCPP="-lstdc++"
+    #STATIC_BUILD="false"
+fi
+
 get_options() {
     $sd -r '# remove commented text
         s/#.*//
@@ -597,6 +608,89 @@ do_checkIfExist() {
     fi
 }
 
+remove_conflicting_libs() {
+    BASE_DIR=$LOCALDESTDIR
+
+    # Lista de arquivos e diretórios para remover
+    ITEMS_TO_REMOVE=(
+        "$BASE_DIR/lib/libshaderc_shared.so.1"
+        "$BASE_DIR/lib/libshaderc.a"
+        "$BASE_DIR/lib/libshaderc_combined.a"
+        "$BASE_DIR/lib/libshaderc_util.a"
+        "$BASE_DIR/lib/libshaderc_shared.so"
+        "$BASE_DIR/include/shaderc/shaderc.hpp"
+        "$BASE_DIR/include/shaderc/shaderc.h"
+        "$BASE_DIR/include/shaderc"
+        "$BASE_DIR/lib/libglslang.so.15.3.0"
+        "$BASE_DIR/lib/libglslang-default-resource-limits.so.15"
+        "$BASE_DIR/lib/libglslang.so.15"
+        "$BASE_DIR/lib/libglslang-default-resource-limits.so.15.3.0"
+        "$BASE_DIR/lib/cmake/glslang"
+        "$BASE_DIR/lib/cmake/glslang/glslang-config-version.cmake"
+        "$BASE_DIR/lib/cmake/glslang/glslang-config.cmake"
+        "$BASE_DIR/lib/cmake/glslang/glslang-targets-release.cmake"
+        "$BASE_DIR/lib/cmake/glslang/glslang-targets.cmake"
+        "$BASE_DIR/lib/libglslang-default-resource-limits.a"
+        "$BASE_DIR/lib/libglslang-default-resource-limits.so"
+        "$BASE_DIR/lib/libslang-glslang.so"
+        "$BASE_DIR/lib/libglslang.a"
+        "$BASE_DIR/lib/libglslang.so"
+        "$BASE_DIR/bin/glslangValidator"
+        "$BASE_DIR/bin/glslang"
+        "$BASE_DIR/include/glslang"
+        "$BASE_DIR/include/glslang/Include/glslang_c_shader_types.h"
+        "$BASE_DIR/include/glslang/Include/glslang_c_interface.h"
+    )
+
+    # Função para remover arquivo/diretório
+    remove_item() {
+        local item="$1"
+        if [ -e "$item" ]; then
+            echo "Removendo: $item"
+            rm -rf "$item"
+            if [ $? -eq 0 ]; then
+                echo "✓ Removido com sucesso"
+            else
+                echo "✗ Erro ao remover"
+            fi
+        else
+            echo "Não encontrado: $item"
+        fi
+        echo ""
+    }
+
+    # Verificar se script está sendo executado como root (se necessário)
+    if [ ! -w "$BASE_DIR" ]; then
+        echo "Aviso: Pode ser necessário executar como sudo"
+        echo ""
+    fi
+
+    echo "=== Script para remover arquivos shaderc ==="
+    echo ""
+    echo "Os seguintes arquivos/diretórios serão removidos:"
+    echo ""
+    for item in "${ITEMS_TO_REMOVE[@]}"; do
+        if [ -e "$item" ]; then
+            echo " - $item"
+        fi
+    done
+
+    echo ""
+    echo "Iniciando remoção..."
+    echo ""
+
+    # Remover cada item
+    for item in "${ITEMS_TO_REMOVE[@]}"; do
+        remove_item "$item"
+    done
+
+    echo "=== Limpeza concluída ==="
+    echo ""
+    echo "Verificando se ainda existem arquivos shaderc..."
+    find "$BASE_DIR" -name "*shaderc*" 2>/dev/null
+
+}
+
 buildLibs() {
 
     cd "$LOCALBUILDDIR" || exit
@@ -730,7 +824,7 @@ buildLibs() {
         else
             echo -ne "\033]0;compile GMP 64Bit\007"
 
-            do_curl "https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz"
+            do_curl "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
 
             # Patch para GCC 15, se necessário
             #if [ -f "../../patches/gmp-gcc-15.patch" ]; then
@@ -853,7 +947,7 @@ buildLibs() {
                 do_checkIfExist fontconfig-git libfontconfig.a
 
                 # Atualizar pkg-config para incluir dependências necessárias
-                $sd -ri "s/(Libs\:.*)/\1 -lpng16 -lbz2 -lxml2 -lz -lstdc++ $osLib -llzma -lm -lexpat -luuid/g" "$LOCALDESTDIR/lib/pkgconfig/fontconfig.pc"
+                $sd -ri "s/(Libs\:.*)/\1 -lpng16 -lbz2 -lxml2 -lz $STATIC_LIBSTDCPP $osLib -llzma $STATIC_LIBM -lexpat -luuid/g" "$LOCALDESTDIR/lib/pkgconfig/fontconfig.pc"
             else
                 echo -------------------------------------------------
                 echo "fontconfig is already up to date"
@@ -907,7 +1001,7 @@ buildLibs() {
                 do_checkIfExist fontconfig-git libfontconfig.a
 
                 # Atualizar pkg-config para incluir dependências necessárias
-                $sd -ri "s/(Libs\:.*)/\1 -lpng16 -lbz2 -lxml2 -lz -lstdc++ $osLib -llzma -lm -lexpat -luuid/g" "$LOCALDESTDIR/lib/pkgconfig/fontconfig.pc"
+                $sd -ri "s/(Libs\:.*)/\1 -lpng16 -lbz2 -lxml2 -lz $STATIC_LIBSTDCPP $osLib -llzma $STATIC_LIBM -lexpat -luuid/g" "$LOCALDESTDIR/lib/pkgconfig/fontconfig.pc"
             else
                 echo -------------------------------------------------
                 echo "fontconfig is already up to date"
@@ -963,7 +1057,7 @@ buildLibs() {
 
             do_checkIfExist harfbuzz-git libharfbuzz.a
 
-            $sd -ri "s/(Libs\:.*)/\1 -lstdc++/g" "$LOCALDESTDIR/lib/pkgconfig/harfbuzz.pc"
+            $sd -ri "s/(Libs\:.*)/\1 $STATIC_LIBSTDCPP/g" "$LOCALDESTDIR/lib/pkgconfig/harfbuzz.pc"
         else
             echo -------------------------------------------------
             echo "harfbuzz is already up to date"
@@ -1018,7 +1112,7 @@ buildLibs() {
 
             do_checkIfExist zimg-git libzimg.a
 
-            $sd -ri "s/(Libs\:.*)/\1 -lstdc++/g" "$LOCALDESTDIR/lib/pkgconfig/zimg.pc"
+            $sd -ri "s/(Libs\:.*)/\1 $STATIC_LIBSTDCPP/g" "$LOCALDESTDIR/lib/pkgconfig/zimg.pc"
         else
             echo -------------------------------------------------
             echo "zimg is already up to date"
@@ -1197,7 +1291,7 @@ buildLibs() {
                 extra="-lpthread -ldl"
             fi
 
-            $sd -ri "s/(Libs\:.*)/\1 -lstdc++ -lcrypto -lz $extra/g" "$LOCALDESTDIR/lib/pkgconfig/srt.pc"
+            $sd -ri "s/(Libs\:.*)/\1 $STATIC_LIBSTDCPP -lcrypto -lz $extra/g" "$LOCALDESTDIR/lib/pkgconfig/srt.pc"
         else
             echo -------------------------------------------------
             echo "srt is already up to date"
@@ -1236,13 +1330,21 @@ buildLibs() {
             cd libvmaf
             mkdir build
             cd build || exit
-
-            meson setup --default-library=static -Denable_avx512=true -Dbuilt_in_models=true --buildtype release --prefix "$LOCALDESTDIR" --libdir="$LOCALDESTDIR/lib" ..
+            
+            meson setup --default-library=static \
+                        -Denable_avx512=true \
+                        -Dbuilt_in_models=true \
+                        --buildtype release \
+                        --prefix "$LOCALDESTDIR" \
+                        --libdir="$LOCALDESTDIR/lib" \
+                        -Dc_link_args="-static-libgcc -static-libstdc++" \
+                        -Dcpp_link_args="-static-libgcc -static-libstdc++" \
+                        ..
 
             ninja
             ninja install
 
-            $sd -ri "s/(Libs\:.*)/\1 -lstdc++/g" "$LOCALDESTDIR/lib/pkgconfig/libvmaf.pc"
+            $sd -ri "s/(Libs\:.*)/\1 $STATIC_LIBSTDCPP/g" "$LOCALDESTDIR/lib/pkgconfig/libvmaf.pc"
 
             do_checkIfExist vmaf-git libvmaf.a
         else
@@ -1271,8 +1373,8 @@ buildLibs() {
             # Lista de patches a aplicar
             patches=(
                 "rtmpdump_2.4_openssl-1.1.diff"
-                "01_unbreak_makefile.diff"
-                "02_gnutls_requires.private.diff"
+                #"01_unbreak_makefile.diff"
+                #"02_gnutls_requires.private.diff"
             )
 
             # Aplicar cada patch se existir
@@ -1282,7 +1384,7 @@ buildLibs() {
                 else
                     flag="-p1"
                 fi
-                git apply $flag < "../../patches/$patch"
+                patch -N $flag -i "../../patches/$patch"
             done
 
             # Modificar o Makefile para usar GNUTLS em vez de OpenSSL
@@ -1463,6 +1565,8 @@ buildLibs() {
 
             make -j "$cpuCount"
             make install
+
+            $sd -ri "s|(Libs: .*)|\1 $STATIC_LIBM|" "$LOCALDESTDIR/lib/pkgconfig/soxr.pc"
 
             do_checkIfExist soxr-0.1.3-Source libsoxr.a
         fi
@@ -1741,7 +1845,7 @@ buildLibs() {
 
             do_checkIfExist libbluray-git libbluray.a
 
-            $sd -ri "s/(Libs\:.*)/\1 -lxml2 -lstdc++ -lz $osLib -llzma -lm -ldl/g" "$LOCALDESTDIR/lib/pkgconfig/libbluray.pc"
+            $sd -ri "s/(Libs\:.*)/\1 -lxml2 $STATIC_LIBSTDCPP -lz $osLib -llzma $STATIC_LIBM -ldl/g" "$LOCALDESTDIR/lib/pkgconfig/libbluray.pc"
         else
             echo -------------------------------------------------
             echo "libbluray-git is already up to date"
@@ -1769,7 +1873,7 @@ buildLibs() {
             make -j "$cpuCount"
             make install
 
-            $sd -i 's/-lass -lm/-lass -lfribidi -lm/' "$LOCALDESTDIR/lib/pkgconfig/libass.pc"
+            $sd -i "s/-lass -lm/-lass -lfribidi $STATIC_LIBM/" "$LOCALDESTDIR/lib/pkgconfig/libass.pc"
 
             do_checkIfExist libass-git libass.a
             buildFFmpeg="true"
@@ -1897,7 +2001,7 @@ buildLibs() {
             if [[ "$system" == "Darwin" ]]; then
                 extra="-lc++"
             else
-                extra="-lstdc++ -lpthread -ldl"
+                extra="$STATIC_LIBSTDCPP -lpthread -ldl"
             fi
 
             $sd -ri "s/(Libs\:.*)/\1 $extra/g" "$LOCALDESTDIR/lib/pkgconfig/x265.pc"
@@ -1967,6 +2071,8 @@ buildLibs() {
             
             cargo cinstall --release $target --jobs "$cpuCount" --prefix=$LOCALDESTDIR --libdir=$LOCALDESTDIR/lib --includedir=$LOCALDESTDIR/include --library-type=staticlib --crt-static
 
+            $sd -ri "s|(Libs: .*)|\1 $STATIC_LIBM|" "$LOCALDESTDIR/lib/pkgconfig/rav1e.pc"
+
             do_checkIfExist rav1e-git librav1e.a
 
             buildFFmpeg="true"
@@ -1998,13 +2104,249 @@ buildLibs() {
 
     cd "$LOCALBUILDDIR" || exit
 
+    if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libshaderc" ]] || [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-vulkan" ]] || [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libplacebo" ]]; then
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 1: SPIRV-HEADERS (Header files and registry)
+        # =================================================================
+        if [ -f "$LOCALDESTDIR/include/spirv/1.2/spirv.h" ]; then
+            echo -------------------------------------------------
+            echo "spirv-headers-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile spirv-headers for shaderc\007"
+
+            do_git "https://github.com/KhronosGroup/SPIRV-Headers.git" spirv-headers-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                mkdir -p build
+                cd build || exit
+
+                # Configure with CMake - headers only, no libraries
+                cmake .. \
+                    -G Ninja \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_INSTALL_SYSCONFDIR="$LOCALDESTDIR/etc" \
+                    -DCMAKE_SKIP_INSTALL_RPATH=ON
+
+                # Build (minimal, just prepares installation)
+                cmake --build .
+
+                # Install headers
+                cmake --install .
+
+                cd ..
+
+                # Install license
+                #mkdir -p "$LOCALDESTDIR/share/licenses/spirv-headers"
+                #if [ -f "LICENSE" ]; then
+                #    cp LICENSE "$LOCALDESTDIR/share/licenses/spirv-headers/"
+                #fi
+
+                # Verificar instalação
+                if [ -f "$LOCALDESTDIR/include/spirv/1.2/spirv.h" ]; then
+                    echo -
+                    echo -------------------------------------------------
+                    echo "build spirv-headers done..."
+                    echo -------------------------------------------------
+                    echo -
+                else
+                    echo -------------------------------------------------
+                    echo "Build spirv-headers failed..."
+                    echo "Delete the source folder under '$LOCALBUILDDIR' and start again"
+                    read -r -p ""
+                    sleep 5
+                fi
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 2: SPIRV-TOOLS (API and commands for SPIR-V)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+        
+        if [ -f "$LOCALDESTDIR/lib/libSPIRV-Tools.a" ]; then
+            echo -------------------------------------------------
+            echo "spirv-tools-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile spirv-tools for shaderc\007"
+
+            do_git "https://github.com/KhronosGroup/SPIRV-Tools.git" spirv-tools-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                mkdir -p build
+                cd build || exit
+
+                # Configure with CMake for static build
+                cmake .. \
+                    -G Ninja \
+                    -DBUILD_SHARED_LIBS=OFF \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_INSTALL_SYSCONFDIR="$LOCALDESTDIR/etc" \
+                    -DCMAKE_SKIP_INSTALL_RPATH=ON \
+                    -DSPIRVHEADERS_SOURCE_DIR="$LOCALDESTDIR" \
+                    -DSPIRV-Headers_SOURCE_DIR="$LOCALDESTDIR" \
+                    -DSPIRV_TOOLS_BUILD_STATIC=ON \
+                    -DSPIRV_WERROR=OFF \
+                    -DSPIRV_SKIP_TESTS=ON \
+                    -DCMAKE_CXX_FLAGS="$CXXFLAGS -ffat-lto-objects"
+
+                # Build
+                cmake --build . --parallel "$cpuCount"
+
+                # Install
+                cmake --install .
+
+                cd ..
+
+                # For static builds, clean up pkg-config if it exists
+                #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/SPIRV-Tools.pc" ]]; then
+                #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/SPIRV-Tools.pc"
+                #fi
+
+                do_checkIfExist spirv-tools-git libSPIRV-Tools.a
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 1: GLSLANG (Shader Front End and Validator)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+
+        if [ -f "$LOCALDESTDIR/lib/libglslang.a" ]; then
+            echo -------------------------------------------------
+            echo "glslang-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile glslang for libplacebo\007"
+
+            do_git "https://github.com/KhronosGroup/glslang.git" glslang-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                # Add fat LTO objects to not break consumers during linking
+                export CXXFLAGS="$CXXFLAGS -ffat-lto-objects"
+
+                echo "Configurando glslang..."
+                
+                # Build static version only (for our static build)
+                cmake \
+                    -Bbuild-static \
+                    -GNinja \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DALLOW_EXTERNAL_SPIRV_TOOLS=ON \
+                    -DBUILD_SHARED_LIBS=OFF \
+                    -DGLSLANG_TESTS=OFF \
+                    -DENABLE_SPVREMAPPER=ON \
+                    -DENABLE_GLSLANG_BINARIES=ON
+
+                echo "Compilando glslang..."
+                cmake --build build-static --parallel "$cpuCount"
+
+                echo "Instalando glslang..."
+                cmake --install build-static
+
+                # Install license
+                #mkdir -p "$LOCALDESTDIR/share/licenses/glslang"
+                #if [ -f "LICENSE.txt" ]; then
+                #    cp LICENSE.txt "$LOCALDESTDIR/share/licenses/glslang/"
+                #fi
+
+                # For static builds, clean up pkg-config if it exists
+                #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/glslang.pc" ]]; then
+                #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/glslang.pc"
+                #    # Add SPIRV-Tools dependency
+                #    $sd -ri "s/(Libs\:.*)/\1 -lSPIRV-Tools/g" "$LOCALDESTDIR/lib/pkgconfig/glslang.pc"
+                #fi
+
+                do_checkIfExist glslang-git libglslang.a
+            fi
+        fi
+
+        # =================================================================
+        # BIBLIOTECA PRINCIPAL: SHADERC (Shader Compilation)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+        
+        if [ -f "$LOCALDESTDIR/lib/libshaderc_shared.a" ]; then
+            echo -------------------------------------------------
+            echo "shaderc is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile shaderc\007"
+            
+            cd /ffmpeg-build/build/
+            rm -rf shaderc-*
+            
+            # IMPORTANTE: Use git clone, não tarball
+            echo "Clonando shaderc com dependências..."
+            git clone --recursive --depth 1 --branch v2023.8 https://github.com/google/shaderc.git shaderc-2023.8
+            cd shaderc-2023.8
+            
+            # Remove examples
+            sed '/examples/d;/third_party/d' -i CMakeLists.txt
+            sed '/build-version/d' -i glslc/CMakeLists.txt
+            
+            # Create build-version.inc file
+            cat <<-EOF > "glslc/src/build-version.inc"
+            "2023.8\\n"
+            "$(pkg-config --modversion SPIRV-Tools 2>/dev/null || pkg-config --modversion spirv-tools 2>/dev/null || echo "unknown")\\n"
+            "14.0.0\\n"
+		EOF
+
+            # Build
+            mkdir build && cd build
+            cmake .. \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                -DCMAKE_INSTALL_LIBDIR="$LOCALDESTDIR/lib" \
+                -DCMAKE_CXX_FLAGS="$CXXFLAGS -ffat-lto-objects" \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DSHADERC_SKIP_TESTS=ON \
+                -DSHADERC_SKIP_EXAMPLES=ON \
+                -DPYTHON_EXECUTABLE=python3 \
+                -Dglslang_SOURCE_DIR="$LOCALDESTDIR/include/glslang"
+            
+            ninja
+            ninja install
+            
+            do_checkIfExist shaderc-2023.8 libshaderc_shared.a
+            
+            echo "✅ shaderc compilado com sucesso"
+        fi
+    fi
+
+    # Criar lista de exclusões
+    RSYNC_EXCLUDES=(
+        --exclude='lib/libshaderc_shared.so*'
+        --exclude='lib/libshaderc.a'
+        --exclude='lib/libshaderc_combined.a'
+        --exclude='lib/libshaderc_util.a'
+        --exclude='include/shaderc/'
+        --exclude='lib/libglslang.so*'
+        --exclude='lib/libglslang-default-resource-limits.so*'
+        --exclude='lib/cmake/glslang/'
+        --exclude='lib/libglslang-default-resource-limits.a'
+        --exclude='lib/libslang-glslang.so'
+        --exclude='lib/libglslang.a'
+        --exclude='bin/glslangValidator'
+        --exclude='bin/glslang'
+        --exclude='include/glslang/'
+    )
+
+    cd "$LOCALBUILDDIR" || exit
+
     if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-vulkan" ]] || [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libplacebo" ]]; then
         if [[ ! -f $LOCALDESTDIR/include/vulkan/vulkan.h ]]; then
             #do_curl https://sdk.lunarg.com/sdk/download/1.3.280.1/linux/vulkansdk-linux-x86_64-1.3.280.1.tar.xz vulkansdk-linux-x86_64-1.3.280.1.tar.xz "1.3.280.1"
             #rsync --remove-source-files -auv x86_64/include $LOCALDESTDIR/include/
             #rsync --remove-source-files -auv x86_64/lib $LOCALDESTDIR/lib/
             do_curl https://sdk.lunarg.com/sdk/download/1.4.313.0/linux/vulkansdk-linux-x86_64-1.4.313.0.tar.xz vulkansdk-linux-x86_64-1.4.313.0.tar.xz "1.4.313.0"
-            rsync --remove-source-files -auv x86_64/ $LOCALDESTDIR/
+            rsync --remove-source-files -auv "${RSYNC_EXCLUDES[@]}" x86_64/ $LOCALDESTDIR/
             #cd 1.4.313.0
             #rsync -av x86_64/ $LOCALDESTDIR/
             #echo
@@ -2014,6 +2356,491 @@ buildLibs() {
     cd "$LOCALBUILDDIR" || exit
 
     if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libplacebo" ]]; then
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 1: SPIRV-HEADERS (Header files and registry)
+        # =================================================================
+        if [ -f "$LOCALDESTDIR/include/spirv/1.2/spirv.h" ]; then
+            echo -------------------------------------------------
+            echo "spirv-headers-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile spirv-headers for shaderc\007"
+
+            do_git "https://github.com/KhronosGroup/SPIRV-Headers.git" spirv-headers-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                mkdir -p build
+                cd build || exit
+
+                # Configure with CMake - headers only, no libraries
+                cmake .. \
+                    -G Ninja \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_INSTALL_SYSCONFDIR="$LOCALDESTDIR/etc" \
+                    -DCMAKE_SKIP_INSTALL_RPATH=ON
+
+                # Build (minimal, just prepares installation)
+                cmake --build .
+
+                # Install headers
+                cmake --install .
+
+                cd ..
+
+                # Install license
+                #mkdir -p "$LOCALDESTDIR/share/licenses/spirv-headers"
+                #if [ -f "LICENSE" ]; then
+                #    cp LICENSE "$LOCALDESTDIR/share/licenses/spirv-headers/"
+                #fi
+
+                # Verificar instalação
+                if [ -f "$LOCALDESTDIR/include/spirv/1.2/spirv.h" ]; then
+                    echo -
+                    echo -------------------------------------------------
+                    echo "build spirv-headers done..."
+                    echo -------------------------------------------------
+                    echo -
+                else
+                    echo -------------------------------------------------
+                    echo "Build spirv-headers failed..."
+                    echo "Delete the source folder under '$LOCALBUILDDIR' and start again"
+                    read -r -p ""
+                    sleep 5
+                fi
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 2: SPIRV-TOOLS (API and commands for SPIR-V)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+        
+        if [ -f "$LOCALDESTDIR/lib/libSPIRV-Tools.a" ]; then
+            echo -------------------------------------------------
+            echo "spirv-tools-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile spirv-tools for shaderc\007"
+
+            do_git "https://github.com/KhronosGroup/SPIRV-Tools.git" spirv-tools-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                mkdir -p build
+                cd build || exit
+
+                # Configure with CMake for static build
+                cmake .. \
+                    -G Ninja \
+                    -DBUILD_SHARED_LIBS=OFF \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_INSTALL_SYSCONFDIR="$LOCALDESTDIR/etc" \
+                    -DCMAKE_SKIP_INSTALL_RPATH=ON \
+                    -DSPIRVHEADERS_SOURCE_DIR="$LOCALDESTDIR" \
+                    -DSPIRV-Headers_SOURCE_DIR="$LOCALDESTDIR" \
+                    -DSPIRV_TOOLS_BUILD_STATIC=ON \
+                    -DSPIRV_WERROR=OFF \
+                    -DSPIRV_SKIP_TESTS=ON \
+                    -DCMAKE_CXX_FLAGS="$CXXFLAGS -ffat-lto-objects"
+
+                # Build
+                cmake --build . --parallel "$cpuCount"
+
+                # Install
+                cmake --install .
+
+                cd ..
+
+                # For static builds, clean up pkg-config if it exists
+                #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/SPIRV-Tools.pc" ]]; then
+                #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/SPIRV-Tools.pc"
+                #fi
+
+                do_checkIfExist spirv-tools-git libSPIRV-Tools.a
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 1: GLSLANG (Shader Front End and Validator)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+        
+        if [ -f "$LOCALDESTDIR/lib/libglslang.a" ]; then
+            echo -------------------------------------------------
+            echo "glslang-1.3.275.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile glslang for libplacebo\007"
+
+            do_git "https://github.com/KhronosGroup/glslang.git" glslang-git "noDepth" "" "vulkan-sdk-1.3.275.0"
+
+            if [[ $compile == "true" ]]; then
+                # Add fat LTO objects to not break consumers during linking
+                export CXXFLAGS="$CXXFLAGS -ffat-lto-objects"
+
+                echo "Configurando glslang..."
+                
+                # Build static version only (for our static build)
+                cmake \
+                    -Bbuild-static \
+                    -GNinja \
+                    -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                    -DCMAKE_BUILD_TYPE=Release \
+                    -DALLOW_EXTERNAL_SPIRV_TOOLS=ON \
+                    -DBUILD_SHARED_LIBS=OFF \
+                    -DGLSLANG_TESTS=OFF \
+                    -DENABLE_SPVREMAPPER=ON \
+                    -DENABLE_GLSLANG_BINARIES=ON
+
+                echo "Compilando glslang..."
+                cmake --build build-static --parallel "$cpuCount"
+
+                echo "Instalando glslang..."
+                cmake --install build-static
+
+                # Install license
+                #mkdir -p "$LOCALDESTDIR/share/licenses/glslang"
+                #if [ -f "LICENSE.txt" ]; then
+                #    cp LICENSE.txt "$LOCALDESTDIR/share/licenses/glslang/"
+                #fi
+
+                # For static builds, clean up pkg-config if it exists
+                #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/glslang.pc" ]]; then
+                #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/glslang.pc"
+                #    # Add SPIRV-Tools dependency
+                #    $sd -ri "s/(Libs\:.*)/\1 -lSPIRV-Tools/g" "$LOCALDESTDIR/lib/pkgconfig/glslang.pc"
+                #fi
+
+                do_checkIfExist glslang-git libglslang.a
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 1: JBIGKIT (Data compression for bi-level images)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+
+        if [ -f "$LOCALDESTDIR/lib/libjbig.a" ]; then
+            echo -------------------------------------------------
+            echo "jbigkit-2.1 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile jbigkit for libtiff\007"
+
+            # Download original source
+            do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/jbigkit/2.1-6.1ubuntu2/jbigkit_2.1.orig.tar.gz"
+
+            # Download Debian patches
+            do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/jbigkit/2.1-6.1ubuntu2/jbigkit_2.1-6.1ubuntu2.debian.tar.xz"
+
+            # Extract Debian patches
+            tar -xf jbigkit_2.1-6.1ubuntu2.debian.tar.xz
+
+            # Apply Debian patches in order
+            echo "Aplicando patches Debian..."
+            
+            patch_dir="debian/patches"
+            patches=(
+                "improve-upstream-Makefiles.diff"
+                "pic-so.diff"
+                "CVE-2017-9937.patch"
+                "unusedResultPedantry.diff"
+                "manpageTypo.diff"
+                "create-testdata.diff"
+                "fixup-testsuite.diff"
+                "debbug-969593.diff"
+            )
+
+            for patch in "${patches[@]}"; do
+                if [ -f "$patch_dir/$patch" ]; then
+                    echo "Aplicando patch: $patch"
+                    patch -Np1 -i "$patch_dir/$patch" || echo "⚠️ Patch $patch falhou"
+                fi
+            done
+
+            # Build with static libraries
+            echo "Compilando jbigkit..."
+            
+            # Modify Makefile for static build
+            $sd -i 's/CFLAGS = -O2 -W/CFLAGS = -O2 -W -fPIC/' libjbig/Makefile
+            
+            # Build only the static library parts we need
+            make -C libjbig libjbig.a libjbig85.a EXTRA_CFLAGS="$CFLAGS -fPIC"
+
+            # Manual installation for static build
+            mkdir -p "$LOCALDESTDIR/include" "$LOCALDESTDIR/lib"
+            
+            # Install headers
+            cp libjbig/jbig.h libjbig/jbig85.h "$LOCALDESTDIR/include/"
+            
+            # Install static libraries
+            cp libjbig/libjbig.a libjbig/libjbig85.a "$LOCALDESTDIR/lib/"
+
+            # Create simple pkg-config file
+            mkdir -p "$LOCALDESTDIR/lib/pkgconfig"
+
+            cat <<-EOF > "$LOCALDESTDIR/lib/pkgconfig/jbigkit.pc"
+            prefix=$LOCALDESTDIR
+            exec_prefix=\${prefix}
+            libdir=\${prefix}/lib
+            includedir=\${prefix}/include
+
+            Name: jbigkit
+            Description: Data compression library for bi-level high-resolution images
+            Version: 2.1
+            Libs: -L\${libdir} -ljbig -ljbig85
+            Cflags: -I\${includedir}
+		EOF
+
+            do_checkIfExist jbigkit-2.1 libjbig.a
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 2: LIBTIFF (TIFF image manipulation library)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+
+        if [ -f "$LOCALDESTDIR/lib/libtiff.a" ]; then
+            echo -------------------------------------------------
+            echo "libtiff-4.7.0 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile libtiff for lcms2\007"
+
+            do_git "https://gitlab.com/libtiff/libtiff.git" libtiff-git "noDepth" "" "v4.7.0"
+
+            if [[ $compile == "true" ]]; then
+                # Prepare build system
+                autoreconf -fiv
+
+                # Configure for static build with minimal dependencies
+                ./configure \
+                    --prefix="$LOCALDESTDIR" \
+                    --disable-shared \
+                    --enable-static \
+                    --sysconfdir="$LOCALDESTDIR/etc" \
+                    --enable-ld-version-script \
+                    --mandir="$LOCALDESTDIR/share/man" \
+                    --with-docdir="$LOCALDESTDIR/share/doc/libtiff" \
+                    --disable-tools \
+                    --disable-contrib \
+                    --disable-tests \
+                    --with-zlib-include-dir="$LOCALDESTDIR/include" \
+                    --with-zlib-lib-dir="$LOCALDESTDIR/lib" \
+                    --with-jpeg-include-dir=/usr/include \
+                    --with-jpeg-lib-dir=/usr/lib/x86_64-linux-gnu \
+                    PKG_CONFIG_PATH="$LOCALDESTDIR/lib/pkgconfig" \
+                    JBIG_CFLAGS="-I$LOCALDESTDIR/include" \
+                    JBIG_LIBS="-L$LOCALDESTDIR/lib -ljbig"
+
+                # Build
+                make -j "$cpuCount"
+
+                # Install
+                make install
+
+                # Install license
+                #mkdir -p "$LOCALDESTDIR/share/licenses/libtiff"
+                #if [ -f "LICENSE.md" ]; then
+                #    cp LICENSE.md "$LOCALDESTDIR/share/licenses/libtiff/"
+                #fi
+
+                # Clean up pkg-config for static builds
+                #if [[ "$STATIC_BUILD" == "true" ]]; then
+                #    for pc_file in "$LOCALDESTDIR/lib/pkgconfig"/libtiff*.pc; do
+                #        if [[ -f "$pc_file" ]]; then
+                #            # Remove dynamic library references
+                #            $sd -ri 's/ -lstdc\+\+\b//g' "$pc_file"
+                            
+                            # Add static dependencies
+                #            $sd -ri "s/(Libs\:.*)/\1 -ljbig -ljbig85 -ljpeg -lz $STATIC_LIBM/g" "$pc_file"
+                #        fi
+                #    done
+                #fi
+
+                do_checkIfExist libtiff-git libtiff.a
+            fi
+        fi
+
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 3: LCMS2 (Color Management)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+
+        if [ -f "$LOCALDESTDIR/lib/liblcms2.a" ]; then
+            echo -------------------------------------------------
+            echo "lcms2-2.17 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile lcms2 for libplacebo\007"
+
+            do_curl "https://github.com/mm2/Little-CMS/releases/download/lcms2.17/lcms2-2.17.tar.gz"
+
+            # Configure with TIFF support
+            ./configure \
+                --prefix="$LOCALDESTDIR" \
+                --disable-shared \
+                --enable-static \
+                --with-tiff="$LOCALDESTDIR" \
+                PKG_CONFIG_PATH="$LOCALDESTDIR/lib/pkgconfig" \
+                TIFF_CFLAGS="-I$LOCALDESTDIR/include" \
+                TIFF_LIBS="-L$LOCALDESTDIR/lib -ltiff"
+
+            make -j "$cpuCount"
+            make install
+
+            # Install license
+            mkdir -p "$LOCALDESTDIR/share/licenses/lcms2"
+            if [ -f "LICENSE" ]; then
+                cp LICENSE "$LOCALDESTDIR/share/licenses/lcms2/"
+            elif [ -f "COPYING" ]; then
+                cp COPYING "$LOCALDESTDIR/share/licenses/lcms2/LICENSE"
+            fi
+
+            # Clean up pkg-config for static builds
+            if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/lcms2.pc" ]]; then
+                $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/lcms2.pc"
+                
+                # Add dependencies chain
+                if ! grep -q "\-lm" "$LOCALDESTDIR/lib/pkgconfig/lcms2.pc"; then
+                    $sd -ri "s/(Libs\:.*)/\1 -ltiff -ljbig -ljbig85 -ljpeg -lz $STATIC_LIBM/g" "$LOCALDESTDIR/lib/pkgconfig/lcms2.pc"
+                fi
+            fi
+
+            do_checkIfExist lcms2-2.17 liblcms2.a
+            
+            echo "✅ lcms2 compilado com sucesso com todas as dependências (jbigkit, libtiff)"
+        fi
+        # =================================================================
+        # PRÉ-DEPENDÊNCIA 3: SHADERC (Shader Compilation)
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
+
+        if [ -f "$LOCALDESTDIR/lib/libshaderc_shared.a" ]; then
+            echo -------------------------------------------------
+            echo "shaderc-2023.8 is already compiled"
+            echo -------------------------------------------------
+        else
+            echo -ne "\033]0;compile shaderc\007"
+            
+            #do_curl "https://github.com/google/shaderc/archive/v2023.8/shaderc-2023.8.tar.gz"
+
+            # Download original source
+            do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/shaderc/2023.8-1build1/shaderc_2023.8.orig.tar.gz"
+
+            # Download Debian patches
+            #do_curl "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/shaderc/2023.8-1build1/shaderc_2023.8-1build1.debian.tar.xz"
+
+            #cd ..
+            # Apply Debian patches in order
+            echo "Aplicando patches Debian..."
+
+            ls
+            ls ./debian/patches           
+            echo "PWD: $PWD"
+
+            #patch_dir="./debian/patches"
+            #patches=(
+            #    "fix-cmake-python_executable.patch"
+            #    "fix-manpage.patch"
+            #    "fix-python-interpreter.patch"
+            #    "rename-libshaderc.patch"
+            #    "use-system-thirdparties.patch"
+            #)
+
+            #for patch in "${patches[@]}"; do
+            #    if [ -f "$patch_dir/$patch" ]; then
+            #        echo "Aplicando patch: $patch"
+            #        patch -Np1 -i "$patch_dir/$patch" || echo "⚠️ Patch $patch falhou"
+            #    fi
+            #done
+
+            
+            # Prepare - de-vendor libs and disable git versioning
+            echo "Preparando shaderc..."
+            
+            # Remove examples and third_party dependencies
+            sed '/examples/d;/third_party/d' -i CMakeLists.txt
+            sed '/build-version/d' -i glslc/CMakeLists.txt
+            
+            # Create build-version.inc file
+            cat <<-EOF > "glslc/src/build-version.inc"
+            "2023.8\\n"
+            "$(pkg-config --modversion SPIRV-Tools 2>/dev/null || pkg-config --modversion spirv-tools 2>/dev/null || echo "unknown")\\n"
+            "14.0.0\\n"
+		EOF
+
+            # Create build directory
+            mkdir -p build
+            cd build || exit
+            
+            # Configure with CMake for static build using local dependencies
+            # Configure with CMake for static build
+            cmake .. \
+                -G Ninja \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX="$LOCALDESTDIR" \
+                -DCMAKE_INSTALL_LIBDIR="$LOCALDESTDIR/lib" \
+                -DCMAKE_CXX_FLAGS="$CXXFLAGS -ffat-lto-objects" \
+                -DBUILD_SHARED_LIBS=OFF \
+                -DSHADERC_SKIP_TESTS=ON \
+                -DSHADERC_SKIP_EXAMPLES=ON \
+                -DPYTHON_EXECUTABLE=python3 \
+                -Dglslang_SOURCE_DIR="$LOCALDESTDIR/include/glslang"
+                #-DSPIRVHEADERS_SOURCE_DIR="$LOCALDESTDIR" \
+                #-DSPIRVTOOLS_SOURCE_DIR="$LOCALDESTDIR" \
+                #-DCMAKE_PREFIX_PATH="$LOCALDESTDIR" \
+                #-DPKG_CONFIG_PATH="$LOCALDESTDIR/lib/pkgconfig" \
+                #-DCMAKE_EXE_LINKER_FLAGS="-L$LOCALDESTDIR/lib -lglslang -lSPIRV -lglslang-default-resource-limits -lMachineIndependent -lGenericCodeGen -lOSDependent -lOGLCompiler -lHLSL -lSPIRV-Tools -lSPIRV-Tools-opt"
+
+            
+            # Build
+            ninja
+            
+            # Install
+            ninja install
+            
+            # Build manual page if asciidoctor is available
+            #if command -v asciidoctor >/dev/null 2>&1; then
+            #    cd glslc || exit
+            #    asciidoctor -b manpage README.asciidoc -o glslc.1 2>/dev/null || true
+                
+                # Install manual page
+            #    mkdir -p "$LOCALDESTDIR/share/man/man1"
+            #    if [ -f "glslc.1" ]; then
+            #        cp glslc.1 "$LOCALDESTDIR/share/man/man1/"
+            #    fi
+                
+            #    cd ..
+            #fi
+            
+            # Remove unused shaderc_static.pc if it exists
+            #if [ -f "$LOCALDESTDIR/lib/pkgconfig/shaderc_static.pc" ]; then
+            #    rm "$LOCALDESTDIR/lib/pkgconfig/shaderc_static.pc"
+            #fi
+            
+            # For static builds, ensure proper flags in pkg-config
+            #if [[ "$STATIC_BUILD" == "true" ]] && [[ -f "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc" ]]; then
+            #    echo "Corrigindo shaderc.pc para build estático..."
+                
+                # Remove dynamic library references and add static dependencies
+            #    $sd -ri 's/ -lstdc\+\+\b//g' "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc"
+                
+                # Add static dependencies for glslang and spirv-tools
+            #    $sd -ri "s/(Libs\:.*)/\1 -lglslang -lglslang-default-resource-limits -lSPIRV-Tools -lSPIRV-Tools-opt -lSPIRV-Tools-link -lSPIRV-Tools-reduce/g" "$LOCALDESTDIR/lib/pkgconfig/shaderc.pc"
+            #fi
+            
+            do_checkIfExist shaderc-2028.3 libshaderc_shared.a
+            
+            echo "✅ shaderc compilado com sucesso com todas as dependências (spirv-headers, spirv-tools)"
+        fi
+
+        # =================================================================
+        # BIBLIOTECA PRINCIPAL: LIBPLACEBO
+        # =================================================================
+        cd "$LOCALBUILDDIR" || exit
 
         #libplacebo v7.349.0 estável
         do_git "https://code.videolan.org/videolan/libplacebo" libplacebo-git "noDepth" "" "9c4b6bbd7a1e223ffdd61affc4e5d463d42d4345"
@@ -2026,29 +2853,26 @@ buildLibs() {
 
         if [[ $compile == "true" ]]; then
             # Aplicar patch para corrigir problemas de vinculação com glslang 15.0.0 para libplacebo v7.349.0
-            # Se você tiver o patch, descomente a linha abaixo
-            #Patch for v7.349.0
-            git apply ../../patches/fix_glslang_linking.patch
-            #Patch for v6.338.2
-            #git apply ../../patches/0001-meson-don-t-hard-require-glslang-internal-dependenci.patch
-            #Patch for v7.349.0
-            #git apply ../../patches/0001-meson-add-glslang-lib-for-15.0.0-linking.patch
-            #Patch for v4.208.0
-            #git apply ../../patches/0001-glsl-glslang-move-resources-declaration-to-C-file.patch
-            #Patch for v4.208.0
-            #git apply ../../patches/glslang_deps_for_libplacebo_v4.208.0.patch
+            echo "Aplicando patches para libplacebo..."
+            
+            # Patch for v7.349.0
+            if [ -f "../../patches/fix_glslang_linking.patch" ]; then
+                git apply ../../patches/fix_glslang_linking.patch || echo "⚠️ Patch fix_glslang_linking.patch falhou"
+            fi
             
             # Corrigir o define de exportação para compilação estática
-            sed -i 's/DPL_EXPORT/DPL_STATIC/' src/meson.build
+            sed 's/DPL_EXPORT/DPL_STATIC/' src/meson.build
             
             rm -rf build
             mkdir build
             cd build
 
-            # Adicionar flags de cabeçalho do glslang como no PKGBUILD
-            export CXXFLAGS="$CXXFLAGS -I/usr/include/glslang"
+            # Adicionar flags de cabeçalho do glslang
+            export CXXFLAGS="$CXXFLAGS -I$LOCALDESTDIR/include/glslang"
 
-            # Configuração baseada no PKGBUILD do Arch Linux
+            echo "Configurando libplacebo com meson..."
+            
+            # Configuração otimizada com dependências locais
             meson setup --prefix="$LOCALDESTDIR" \
                 --buildtype=release \
                 --default-library=static \
@@ -2064,18 +2888,22 @@ buildLibs() {
                 -Dfuzz=false \
                 -Dvulkan-registry="$LOCALDESTDIR/share/vulkan/registry/vk.xml" \
                 --libdir="$LOCALDESTDIR/lib" \
+                --pkg-config-path="$LOCALDESTDIR/lib/pkgconfig" \
                 ..
 
+            echo "Compilando libplacebo..."
             ninja -j$(nproc)
             ninja install
 
             # SOLUÇÃO CRÍTICA: Adicionar a biblioteca C++ às dependências privadas no pkg-config
-            echo "Libs.private: -lstdc++" >> "$LOCALDESTDIR/lib/pkgconfig/libplacebo.pc"
+            echo "Libs.private: $STATIC_LIBSTDCPP" >> "$LOCALDESTDIR/lib/pkgconfig/libplacebo.pc"
 
             do_checkIfExist libplacebo-git libplacebo.a
+            
+            echo "✅ libplacebo compilado com sucesso com todas as dependências (glslang, lcms2, shaderc)"
         else
             echo -------------------------------------------------
-            echo "nv-codec-headers-git is already up to date"
+            echo "libplacebo is already up to date"
             echo -------------------------------------------------
         fi
     fi
@@ -2204,8 +3032,6 @@ buildLibs() {
                 -DCMAKE_BUILD_TYPE=Release \
                 -DBUILD_SHARED_LIBS=OFF \
                 -DCMAKE_POSITION_INDEPENDENT_CODE=OFF \
-                -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
-                -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS} -static" \
                 -DCMAKE_SHARED_LINKER_FLAGS="" \
                 -DCMAKE_MODULE_LINKER_FLAGS="" \
                 -DCMAKE_C_FLAGS="${CFLAGS} -ffunction-sections -fdata-sections" \
@@ -2240,89 +3066,6 @@ buildLibs() {
             echo -------------------------------------------------
         fi
     fi
-}
-
-remove_conflicting_libs() {
-    BASE_DIR=$LOCALDESTDIR
-
-    # Lista de arquivos e diretórios para remover
-    ITEMS_TO_REMOVE=(
-        "$BASE_DIR/lib/libshaderc_shared.so.1"
-        "$BASE_DIR/lib/libshaderc.a"
-        "$BASE_DIR/lib/libshaderc_combined.a"
-        "$BASE_DIR/lib/libshaderc_util.a"
-        "$BASE_DIR/lib/libshaderc_shared.so"
-        "$BASE_DIR/include/shaderc/shaderc.hpp"
-        "$BASE_DIR/include/shaderc/shaderc.h"
-        "$BASE_DIR/include/shaderc"
-        "$BASE_DIR/lib/libglslang.so.15.3.0"
-        "$BASE_DIR/lib/libglslang-default-resource-limits.so.15"
-        "$BASE_DIR/lib/libglslang.so.15"
-        "$BASE_DIR/lib/libglslang-default-resource-limits.so.15.3.0"
-        "$BASE_DIR/lib/cmake/glslang"
-        "$BASE_DIR/lib/cmake/glslang/glslang-config-version.cmake"
-        "$BASE_DIR/lib/cmake/glslang/glslang-config.cmake"
-        "$BASE_DIR/lib/cmake/glslang/glslang-targets-release.cmake"
-        "$BASE_DIR/lib/cmake/glslang/glslang-targets.cmake"
-        "$BASE_DIR/lib/libglslang-default-resource-limits.a"
-        "$BASE_DIR/lib/libglslang-default-resource-limits.so"
-        "$BASE_DIR/lib/libslang-glslang.so"
-        "$BASE_DIR/lib/libglslang.a"
-        "$BASE_DIR/lib/libglslang.so"
-        "$BASE_DIR/bin/glslangValidator"
-        "$BASE_DIR/bin/glslang"
-        "$BASE_DIR/include/glslang"
-        "$BASE_DIR/include/glslang/Include/glslang_c_shader_types.h"
-        "$BASE_DIR/include/glslang/Include/glslang_c_interface.h"
-    )
-
-    # Função para remover arquivo/diretório
-    remove_item() {
-        local item="$1"
-        if [ -e "$item" ]; then
-            echo "Removendo: $item"
-            rm -rf "$item"
-            if [ $? -eq 0 ]; then
-                echo "✓ Removido com sucesso"
-            else
-                echo "✗ Erro ao remover"
-            fi
-        else
-            echo "Não encontrado: $item"
-        fi
-        echo ""
-    }
-
-    # Verificar se script está sendo executado como root (se necessário)
-    if [ ! -w "$BASE_DIR" ]; then
-        echo "Aviso: Pode ser necessário executar como sudo"
-        echo ""
-    fi
-
-    echo "=== Script para remover arquivos shaderc ==="
-    echo ""
-    echo "Os seguintes arquivos/diretórios serão removidos:"
-    echo ""
-    for item in "${ITEMS_TO_REMOVE[@]}"; do
-        if [ -e "$item" ]; then
-            echo " - $item"
-        fi
-    done
-
-    echo ""
-    echo "Iniciando remoção..."
-    echo ""
-
-    # Remover cada item
-    for item in "${ITEMS_TO_REMOVE[@]}"; do
-        remove_item "$item"
-    done
-
-    echo "=== Limpeza concluída ==="
-    echo ""
-    echo "Verificando se ainda existem arquivos shaderc..."
-    find "$BASE_DIR" -name "*shaderc*" 2>/dev/null
-
 }
 
 buildFfmpeg() {
@@ -2386,7 +3129,7 @@ buildFfmpeg() {
             fi
         fi
 
-        remove_conflicting_libs
+        #remove_conflicting_libs
 
         if [ -f "ffbuild/config.mak" ]; then
             # make uninstall
@@ -2396,8 +3139,8 @@ buildFfmpeg() {
         #git cherry-pick -n bcfbf2bac8f9eeeedc407b40596f5c7aaa0d5b47
         #git cherry-pick -n d0facac679faf45d3356dff2e2cb382580d7a521
         #git apply ../../patches/fix_build_with_texinfo-7.2.patch
-        git apply ../../patches/vf_libplacebo_ffmpeg_5.1.6.patch
-        git apply ../../patches/0001_configure_support_static_libnpp_for_ffmpeg_5.1.6_cuda_toolkit_12.9.patch
+        patch -N -p1 -i ../../patches/vf_libplacebo_ffmpeg_5.1.6.patch
+        patch -N -p1 -i ../../patches/0001_configure_support_static_libnpp_for_ffmpeg_5.1.6_cuda_toolkit_12.9.patch
         
         if [[ " ${FFMPEG_LIBS[@]} " =~ "--enable-libndi_newtek" ]]; then
             git apply ../../patches/revert-libndi_newtek.patch
@@ -2416,12 +3159,10 @@ buildFfmpeg() {
             EXTRA_LD="$EXTRA_LD -L/usr/local/cuda/lib64"
         fi
 
-        STATIC_FLAGS="-static-libgcc -static-libstdc++"
-
         ./configure $arch --prefix="$prefix_extra" --disable-debug "$static_share" $disable_ffplay \
         --disable-doc --enable-gpl --enable-version3 \
         $cpuDetect --enable-avfilter --enable-zlib "${FFMPEG_LIBS[@]}" \
-        $osFlag --extra-libs="-lm -liconv $extraLibs" --extra-cflags="$EXTRA_CFLAGS" $pkg_extra --extra-ldflags="$STATIC_FLAGS $EXTRA_LD"
+        $osFlag --extra-libs="-lm -liconv $extraLibs" --extra-cflags="$EXTRA_CFLAGS" $pkg_extra --extra-ldflags="$EXTRA_LD"
 
         #$sd -ri "s/--prefix=[^ ]* //g" config.h
         #$sd -ri "s/ --extra-libs='.*'//g" config.h
