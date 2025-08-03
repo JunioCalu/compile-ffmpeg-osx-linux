@@ -4,20 +4,142 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        USER_ID: ${UID:-1000}
-        GROUP_ID: ${GID:-1000}
-    #user: "${UID:-1000}:${GID:-1000}"
-    container_name: ffmpeg-build-container
-    #cgroup: host
+        UBUNTU_VERSION: ${UBUNTU_VERSION:-24.04}
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-build-${UBUNTU_VERSION:-24.04}-container
+    # Configuração para evitar problemas de permissão com volumes
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
     volumes:
       #- /sys/fs/cgroup:/sys/fs/cgroup:rw
       - /usr/local/cuda:/usr/local/cuda:ro
-      # Mapear diretórios locais para os diretórios build e local do container
       - ./:/ffmpeg-build/:ro              # Código e scripts (só leitura)
       - ./build:/ffmpeg-build/build       # Build artifacts (escrita)
-      - ./local:/ffmpeg-build/local       # Binários finais (escrita)local
+      - ./local:/ffmpeg-build/local       # Binários finais (escrita)
     environment:
       - TZ=America/Maceio
-    # Manter o container rodando após a compilação para inspeção
+      - BUILD_MODE=${BUILD_MODE:-compile}
+      - MAINTENANCE_MODE=${MAINTENANCE_MODE:-false}
+      - KEEP_ALIVE=${KEEP_ALIVE:-true}
+      - AUTO_CLEAN=${AUTO_CLEAN:-false}
+      - FFMPEG_BUILD_OPTS=${FFMPEG_BUILD_OPTS:---optimize=y}
+    # Manter o container rodando para modo interativo
     tty: true
     stdin_open: true
+
+  # MODO MANUTENÇÃO - Container para debug/manutenção
+  ffmpeg-maintenance:
+    extends: ffmpeg-compiler
+    container_name: ffmpeg-maintenance-${UBUNTU_VERSION:-24.04}-container
+    # Herda user: do ffmpeg-compiler via extends
+    environment:
+      - TZ=America/Maceio
+      - BUILD_MODE=${BUILD_MODE:-compile}
+      - MAINTENANCE_MODE=true
+      - KEEP_ALIVE=true
+      - AUTO_CLEAN=false
+      - FFMPEG_BUILD_OPTS=${FFMPEG_BUILD_OPTS:---optimize=y}
+    command: ["maintenance"]
+
+  # MODO SHELL - Acesso direto ao shell
+  ffmpeg-shell:
+    extends: ffmpeg-compiler
+    container_name: ffmpeg-shell-${UBUNTU_VERSION:-24.04}-container
+    # Herda user: do ffmpeg-compiler via extends
+    environment:
+      - TZ=America/Maceio
+      - BUILD_MODE=${BUILD_MODE:-compile}
+      - MAINTENANCE_MODE=true
+      - KEEP_ALIVE=true
+      - FFMPEG_BUILD_OPTS=${FFMPEG_BUILD_OPTS:---optimize=y}
+    command: ["shell"]
+
+  # MODO INTERATIVO - Build + shell após conclusão
+  ffmpeg-interactive:
+    extends: ffmpeg-compiler
+    container_name: ffmpeg-interactive-${UBUNTU_VERSION:-24.04}-container
+    # Herda user: do ffmpeg-compiler via extends
+    environment:
+      - TZ=America/Maceio
+      - BUILD_MODE=${BUILD_MODE:-compile}
+      - MAINTENANCE_MODE=false
+      - KEEP_ALIVE=true
+      - AUTO_CLEAN=false
+      - FFMPEG_BUILD_OPTS=${FFMPEG_BUILD_OPTS:---optimize=y}
+    command: ["build"]
+
+  # Serviços pré-definidos para LTS - MANUTENÇÃO
+  ffmpeg-22-04-maint:
+    extends: ffmpeg-maintenance
+    build:
+      args:
+        UBUNTU_VERSION: "22.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-maintenance-22.04-container
+    # Herda user: do ffmpeg-maintenance via extends
+
+  ffmpeg-20-04-maint:
+    extends: ffmpeg-maintenance
+    build:
+      args:
+        UBUNTU_VERSION: "20.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-maintenance-20.04-container
+    # Herda user: do ffmpeg-maintenance via extends
+
+  ffmpeg-18-04-maint:
+    extends: ffmpeg-maintenance
+    build:
+      args:
+        UBUNTU_VERSION: "18.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-maintenance-18.04-container
+    # Herda user: do ffmpeg-maintenance via extends
+
+  # Serviços pré-definidos para LTS - NORMAL
+  ffmpeg-22-04:
+    extends: ffmpeg-compiler
+    build:
+      args:
+        UBUNTU_VERSION: "22.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-build-22.04-container
+    # Herda user: do ffmpeg-compiler via extends
+
+  ffmpeg-20-04:
+    extends: ffmpeg-compiler
+    build:
+      args:
+        UBUNTU_VERSION: "20.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-build-20.04-container
+    # Herda user: do ffmpeg-compiler via extends
+
+  ffmpeg-18-04:
+    extends: ffmpeg-compiler
+    build:
+      args:
+        UBUNTU_VERSION: "18.04"
+        BUILD_MODE: ${BUILD_MODE:-compile}
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
+        USERNAME: ${USERNAME:-builduser}
+    container_name: ffmpeg-build-18.04-container
+    # Herda user: do ffmpeg-compiler via extends

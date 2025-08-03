@@ -1,5 +1,5 @@
 --enable-static
-#--enable-lto
+--enable-lto
 --enable-nonfree
 --enable-cuda-llvm
 --enable-cuda-nvcc
